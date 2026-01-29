@@ -36,5 +36,21 @@ public enum E_EventType
     /// <summary>
     /// 竖直轴输入事件-参数：float轴值
     /// </summary>
-    E_Input_Vertical
+    E_Input_Vertical,
+    /// <summary>
+    /// 面具1切换事件-参数：无
+    /// </summary>
+    E_ItemChangeMask1,
+    /// <summary>
+    /// 面具2切换事件-参数：无
+    /// </summary>
+    E_ItemChangeMask2,
+    /// <summary>
+    /// 面具3切换事件-参数：无
+    /// </summary>
+    E_ItemChangeMask3,
+    /// <summary>
+    /// 面具UI更新事件-参数：int面具ID
+    /// </summary>
+    E_UpdateMaskUI,
 }

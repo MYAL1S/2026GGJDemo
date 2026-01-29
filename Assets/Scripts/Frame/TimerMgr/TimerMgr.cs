@@ -23,7 +23,11 @@ public class TimerMgr : BaseSingleton<TimerMgr>
     /// <summary>
     /// 待移除的计时器列表
     /// </summary>
-    private List<int> removeList = new List<int>();
+    private readonly List<int> removeListScaled = new List<int>();
+    private readonly List<int> removeListReal = new List<int>();
+    // 临时Key缓存，避免遍历时集合被改动
+    private readonly List<int> tempKeysScaled = new List<int>();
+    private readonly List<int> tempKeysReal = new List<int>();
 
     /// <summary>
     /// 记录计时器管理器中的受TimeScale计时用的协同程序
@@ -60,8 +64,8 @@ public class TimerMgr : BaseSingleton<TimerMgr>
     /// </summary>
     public void Start()
     {
-        timer = MonoMgr.Instance.StartCoroutine(StartTiming(false,timerDic));
-        timer = MonoMgr.Instance.StartCoroutine(StartTiming(true, realTimerDic));
+        timer = MonoMgr.Instance.StartCoroutine(StartTiming(false, timerDic, tempKeysScaled, removeListScaled));
+        realTimer = MonoMgr.Instance.StartCoroutine(StartTiming(true, realTimerDic, tempKeysReal, removeListReal));
     }
 
     /// <summary>
@@ -73,7 +77,7 @@ public class TimerMgr : BaseSingleton<TimerMgr>
         MonoMgr.Instance.StopCoroutine(realTimer);
     }
 
-    public IEnumerator StartTiming(bool isReal,Dictionary<int,TimerItem> timerDic)
+    public IEnumerator StartTiming(bool isReal,Dictionary<int,TimerItem> timerDic,List<int> tempKeys,List<int> removeList)
     {
         TimerItem timer;
         while (true)
@@ -85,10 +89,12 @@ public class TimerMgr : BaseSingleton<TimerMgr>
             else
                 //100毫秒进行一次计时
                 yield return waitForSeconds;
-            //遍历字典中的所有计时器
-            foreach (int id in timerDic.Keys)
-            {
-                timer = timerDic[id];
+            // 遍历前拷贝 key，避免迭代中集合被改动
+            tempKeys.Clear();
+            tempKeys.AddRange(timerDic.Keys);
+            foreach (int id in tempKeys)
+             {
+                 timer = timerDic[id];
                 if (timer.isRunning)
                 {
                     timer.intervalTime -= (int)(intervalTime * 1000);
@@ -108,12 +114,12 @@ public class TimerMgr : BaseSingleton<TimerMgr>
             }
 
             foreach (int id in removeList)
-            {
-                timerDic.Remove(id);
-            }
-            removeList.Clear();
-        }
-    }
+             {
+                 timerDic.Remove(id);
+             }
+             removeList.Clear();
+         }
+     }
 
 
     /// <summary>
@@ -149,13 +155,13 @@ public class TimerMgr : BaseSingleton<TimerMgr>
         {
             TimerItem timer = timerDic[id];
             PoolMgr.Instance.PushObj(timer);
-            removeList.Add(id);
+            removeListScaled.Add(id);
         }
         else if (realTimerDic.ContainsKey(id))
         {
             TimerItem timer = realTimerDic[id];
             PoolMgr.Instance.PushObj(timer);
-            removeList.Add(id);
+            removeListReal.Add(id);
         }
     }
 

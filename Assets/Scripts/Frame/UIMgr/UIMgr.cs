@@ -323,7 +323,7 @@ public class UIMgr : BaseSingleton<UIMgr>
         {
             PanelInfo<T> panelInfo = panelDic[panelName] as PanelInfo<T>;
             //资源还未加载完成
-            if (panelInfo.panel != null)
+            if (panelInfo.panel == null)
             {
                 panelInfo.callback += callback;
             }

@@ -228,15 +228,15 @@ public class InputMgr : BaseSingleton<InputMgr>
                 {
                     case InputStatus.Press:
                         if (Input.GetMouseButton(nowInputInfo.mouseID))
-                            EventCenter.Instance.EventTrigger(events);
+                            TriggerKeyboardEvent(events, nowInputInfo.keyCode);
                         break;
                     case InputStatus.Down:
                         if (Input.GetKeyDown(nowInputInfo.keyCode))
-                            EventCenter.Instance.EventTrigger(events);
+                            TriggerKeyboardEvent(events, nowInputInfo.keyCode);
                         break;
                     case InputStatus.Up:
                         if (Input.GetKeyUp(nowInputInfo.keyCode))
-                            EventCenter.Instance.EventTrigger(events);
+                            TriggerKeyboardEvent(events, nowInputInfo.keyCode);
                         break;
                     default:
                         break;
@@ -269,6 +269,24 @@ public class InputMgr : BaseSingleton<InputMgr>
             InputHotKey("Horizontal");
             InputHotKey("Vertical");
         }
+    }
+
+    /// <summary>
+    /// 触发键盘事件
+    /// </summary>
+    /// <param name="eventType">事件类型</param>
+    /// <param name="key">按键</param>
+    private void TriggerKeyboardEvent(E_EventType eventType, KeyCode key)
+    {
+        if (EventCenter.Instance.eventDic.TryGetValue(eventType, out var info))
+        {
+            if (info is EventInfo<KeyCode>)
+            {
+                EventCenter.Instance.EventTrigger<KeyCode>(eventType, key);
+                return;
+            }
+        }
+        EventCenter.Instance.EventTrigger(eventType);
     }
 
 

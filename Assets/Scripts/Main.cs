@@ -34,7 +34,9 @@ public class Main : MonoBehaviour
         //});
 
         //#endregion
-        UIMgr.Instance.ShowPanel<LoginPanel>();
+        // UIMgr.Instance.ShowPanel<LoginPanel>();
+        UIMgr.Instance.ShowPanel<UIBackgroundPanel>(E_UILayer.Bottom);
+        UIMgr.Instance.ShowPanel<GamePanel>();
     }
 
     // Update is called once per frame

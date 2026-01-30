@@ -5,6 +5,7 @@
     <file url="file://$PROJECT_DIR$/Assets/Scripts/Frame/MonoMgr/MonoMgr.cs" charset="GBK" />
     <file url="file://$PROJECT_DIR$/Assets/Scripts/Frame/SceneMgr/SceneMgr.cs" charset="GBK" />
     <file url="file://$PROJECT_DIR$/Assets/Scripts/Frame/UIMgr/BeginPanel.cs" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/Assets/Scripts/GameMgr/ElevatorMgr.cs" charset="GBK" />
     <file url="file://$PROJECT_DIR$/Assets/Scripts/GameMgr/MaskMgr.cs" charset="GBK" />
     <file url="file://$PROJECT_DIR$/Assets/Scripts/GameMgr/ResourcesMgr.cs" charset="GBK" />
     <file url="file://$PROJECT_DIR$/Assets/Scripts/Main.cs" charset="GBK" />

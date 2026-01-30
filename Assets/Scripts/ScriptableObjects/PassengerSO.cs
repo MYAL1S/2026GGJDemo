@@ -30,7 +30,7 @@ public class PassengerSO : ScriptableObject
     /// </summary>
     public bool isGhost;
     /// <summary>
-    /// 信任度
+    /// 是否为特殊乘客
     /// </summary>
-    public int trustValue;
+    public bool isSpecialPassenger;
 }

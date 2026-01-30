@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 
@@ -27,6 +28,10 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     private E_ElevatorState currentElevatorState = E_ElevatorState.Stopped;
 
     private Text txtFloor;
+    
+    private int waveNum = 0;
+    
+    private int levelNum = 0;
 
 
     /// <summary>
@@ -45,7 +50,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState = E_ElevatorState.Moving;
         Debug.Log("电梯正在运行...");
 
-        TimerMgr.Instance.CreateTimer(false, Random.Range(3, 5) * 1000, () => 
+        TimerMgr.Instance.CreateTimer(false, Random.Range(30, 50) * 1000, () => 
         {
             EnterArrivingState();
         }, 100, () => 
@@ -62,16 +67,25 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     {
         currentElevatorState = E_ElevatorState.Arriving;
 
-        // 随机定格在一个楼层
-        int stopFloor = Random.Range(2, 18);
-        //改变楼层ui显示
+        var wave = ResourcesMgr.Instance.waveSOList[waveNum];
+        if (levelNum >= wave.levelDetails.Count)
+        {
+            levelNum = 0; // 重置到当前 wave 的第一个 level
+            waveNum++; // 切换到下一个 wave
+            wave = ResourcesMgr.Instance.waveSOList[waveNum];
+        }
+
+        // 获取当前楼层
+        int stopFloor = wave.levelDetails[levelNum].level;
+        levelNum++; // 准备下次调用时切换到下一个 level
+
+        // 改变楼层 UI 显示
         txtFloor.text = stopFloor.ToString();
 
         // 播放开门动画
 
-
         // 等待开门动画播放完（假设动画1秒）
-        TimerMgr.Instance.CreateTimer(false, 1000, () => 
+        TimerMgr.Instance.CreateTimer(false, 1000, () =>
         {
             // 门开了，进入交互状态
             EnterStoppedState();

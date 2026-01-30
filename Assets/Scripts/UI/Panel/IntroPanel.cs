@@ -34,10 +34,15 @@ public class IntroPanel : BasePanel
         {
             //如果在切换场景过程中有需要执行的函数
             //可以在事件中心中添加监听 如根据加载进度做处理
-            //EventCenter.Instance.AddEventListener<float>(E_EventType.E_LoadScene, (f) =>{ });
+            
             //如果切换完场景有需要处理的逻辑 可以在下面方法中传入委托 场景加载完成后自动调用
-            //SceneMgr.Instance.LoadSceneAsync("GameScene");
+            SceneMgr.Instance.LoadSceneAsync("GameScene", () =>
+            {
+                UIMgr.Instance.HidePanel<IntroPanel>();
+            });
+            // EventCenter.Instance.AddEventListener<float>(E_EventType.E_LoadScene);
             print("已切换至xx场景");
+            
         });
     }
 }

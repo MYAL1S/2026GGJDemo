@@ -45,7 +45,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState = E_ElevatorState.Moving;
         Debug.Log("电梯正在运行...");
 
-        TimerMgr.Instance.CreateTimer(false, Random.Range(3, 5) * 1000, () => 
+        TimerMgr.Instance.CreateTimer(false, Random.Range(30, 50) * 1000, () => 
         {
             EnterArrivingState();
         }, 100, () => 

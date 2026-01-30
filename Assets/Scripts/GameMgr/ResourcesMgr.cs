@@ -24,6 +24,18 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     /// </summary>
     [Tooltip("存储所有的乘客的具体信息")]
     public List<PassengerSO> passengerSOList = new List<PassengerSO>();
+    /// <summary>
+    /// 波数详情的ScriptableObject列表
+    /// </summary>
+    public List<WaveDetailSO> waveSOList = new List<WaveDetailSO>();
+    /// <summary>
+    /// 乘客的信任值
+    /// </summary>
+    public int passengerTrustValue;
+    /// <summary>
+    /// 稳定度值
+    /// </summary>
+    public int stabilityValue;
 
     // Start is called before the first frame update
     void Start()

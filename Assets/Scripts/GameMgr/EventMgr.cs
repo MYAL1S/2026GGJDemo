@@ -8,5 +8,6 @@ using UnityEngine;
 public class EventMgr : BaseSingleton<EventMgr>
 {
 
+
     private EventMgr() { }
 }

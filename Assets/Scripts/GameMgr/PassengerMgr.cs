@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Xml;
 using UnityEngine;
 
+/// <summary>
+/// 乘客管理器
+/// </summary>
 public class PassengerMgr : BaseSingleton<PassengerMgr>
 {
     public List<Passenger> passengerList;
@@ -12,6 +15,10 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     private PassengerMgr()
     {
         passengerList = new List<Passenger>();
+        //注册乘客点击事件监听
+        EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerClicked, OnPassengerClicked);
+        //注册每帧更新监听
+        MonoMgr.Instance.AddUpdateListener(OnUpdate);
     }
 
     /// <summary>
@@ -98,12 +105,40 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// </summary>
     /// <typeparam name="T">列表类型</typeparam>
     /// <param name="list">传入的列表</param>
-    void Shuffle<T>(List<T> list)
+    private void Shuffle<T>(List<T> list)
     {
         for (int i = 0; i < list.Count; i++)
         {
             int r = Random.Range(i, list.Count);
             (list[i], list[r]) = (list[r], list[i]);
+        }
+    }
+
+    /// <summary>
+    /// 当乘客被点击时触发
+    /// </summary>
+    /// <param name="passenger"></param>
+    private void OnPassengerClicked(Passenger passenger)
+    {
+        if (passenger == null)
+            return;
+        //此处应该显示UI等逻辑
+        // 仅作示例输出
+        string result = passenger.passengerInfo.isGhost ? "Ghost" : "Normal";
+        Debug.Log(result);
+        Debug.Log($"Passenger clicked: {(passenger.passengerInfo != null ? passenger.passengerInfo.passengerName : "Unknown")}");
+    }
+
+    /// <summary>
+    /// 每一帧执行的逻辑 检测是否点击了乘客
+    /// </summary>
+    private void OnUpdate()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            MathUtil.RayCast2D<Passenger>(Camera.main.ScreenPointToRay(Input.mousePosition), (passenger) => {
+                passenger?.OnMouseDown();
+            },1000,1<<LayerMask.NameToLayer("Passenger"));
         }
     }
 }

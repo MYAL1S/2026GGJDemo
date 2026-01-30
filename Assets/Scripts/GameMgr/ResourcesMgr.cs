@@ -24,10 +24,10 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     /// </summary>
     [Tooltip("存储所有的乘客的具体信息")]
     public List<PassengerSO> passengerSOList = new List<PassengerSO>();
+
     // Start is called before the first frame update
     void Start()
     {
-        
     }
 
     // Update is called once per frame

@@ -20,9 +20,13 @@ public class Passenger : MonoBehaviour
     /// <summary>
     /// 关联的乘客信息数据
     /// </summary>
+    [HideInInspector]
     public PassengerSO passengerInfo;
 
-
+    /// <summary>
+    /// 初始化乘客信息
+    /// </summary>
+    /// <param name="passengerSO">含有乘客信息的可脚本化对象</param>
     public void Init(PassengerSO passengerSO)
     {
         passengerInfo = passengerSO;
@@ -46,11 +50,13 @@ public class Passenger : MonoBehaviour
         }
     }
 
-    // 点击交互（驱逐逻辑）
-    void OnMouseDown()
+    /// <summary>
+    /// 当乘客被点击时触发
+    /// </summary>
+    public void OnMouseDown()
     {
-        // 通知管理器处理结果
-        //PassengerMgr.Instance.OnPassengerKicked(this);
+        // 发布乘客被点击事件
+        EventCenter.Instance.EventTrigger<Passenger>(E_EventType.E_PassengerClicked, this);
     }
 
     // Start is called before the first frame update

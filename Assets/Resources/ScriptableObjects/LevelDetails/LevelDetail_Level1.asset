@@ -17,8 +17,16 @@ MonoBehaviour:
   - {x: 0.5, y: 0, z: 0}
   - {x: 0, y: 0.5, z: 0}
   - {x: 0, y: -0.5, z: 0}
+  - {x: 0, y: -0.5, z: 0}
+  - {x: 0, y: -0.5, z: 0}
   charmSpawnPositionArray:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  normalPassengerCount: 0
+  ghostCount: 0
+  charmCount: 0
+  dockingTime: 0

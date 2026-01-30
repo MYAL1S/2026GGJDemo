@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 游戏界面面板
+/// </summary>
 public class GamePanel : BasePanel
 {
     private Text txtMask;

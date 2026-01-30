@@ -53,4 +53,9 @@ public enum E_EventType
     /// 面具UI更新事件-参数：int面具ID
     /// </summary>
     E_UpdateMaskUI,
+    /// <summary>
+    /// 
+    /// </summary>
+    E_PassengerClicked
+
 }

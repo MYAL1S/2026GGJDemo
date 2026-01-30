@@ -1,18 +1,25 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
-/// 游戏数据管理器
+/// 游戏数据管理器 主要用于管理游戏中的各种数据
 /// </summary>
 public class GameDataMgr : BaseSingleton<GameDataMgr>
 {
-    ///// <summary>
-    ///// 记录关卡信息 每一波的数据 如需要加载哪几个Ghost预设体 哪几个普通人预设体等
-    ///// </summary>
-    //private List<LevelInfo> levelInfoList;
-    //public List<LevelInfo> LevelInfoList => levelInfoList;
+    // 游戏设置信息
+    private SettingInfo settingInfo;
+    public SettingInfo SettingInfo => settingInfo;
+
+
+    /// <summary>
+    /// 保存当前的设置数据到本地
+    /// </summary>
+    public void SaveSettingData()
+    {
+        JsonMgr.Instance.SaveData(settingInfo,"Settings");
+    }
+
 
     /// <summary>
     /// 记录角色信息 如灵能值 当前拥有的面具等
@@ -20,11 +27,6 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     private PlayerInfo playerInfo;
     public PlayerInfo PlayerInfo => playerInfo;
 
-    ///// <summary>
-    ///// 记录乘客信息 如乘客姓名 预设体路径等
-    ///// </summary>
-    //private List<PassengerInfo> passengerInfoList;
-    //public List<PassengerInfo> PassengerInfoList => passengerInfoList;
 
     /// <summary>
     /// 记录电梯信息 如稳定值 电梯容量等
@@ -59,6 +61,8 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
         //在调用构造函数时加载面具数据信息
         //面具信息存储在StreamingAssets/MaskInfo.json文件中
         maskInfoList = JsonMgr.Instance.LoadData<List<MaskInfo>>("MaskInfo");
+
+        settingInfo = JsonMgr.Instance.LoadData<SettingInfo>("Settings");
     }
 
     /// <summary>
@@ -66,6 +70,6 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     /// </summary>
     public void SavePlayerInfo()
     {
-        JsonMgr.Instance.SaveData(playerInfo,"PlayerInfo");
+        JsonMgr.Instance.SaveData(playerInfo, "PlayerInfo");
     }
 }

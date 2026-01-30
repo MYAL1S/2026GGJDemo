@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" addBOMForNewFiles="with BOM under Windows, with no BOM otherwise">
+    <file url="file://$PROJECT_DIR$/Assets/Scripts/Data/GameDataMgr.cs" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/Assets/Scripts/Frame/SceneMgr/SceneMgr.cs" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/Assets/Scripts/Main.cs" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/Assets/Scripts/Role/Passenger.cs" charset="GBK" />
+  </component>
+</project>

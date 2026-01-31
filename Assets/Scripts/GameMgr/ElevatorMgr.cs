@@ -51,7 +51,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState = E_ElevatorState.Moving;
         Debug.Log("电梯正在运行...");
 
-        TimerMgr.Instance.CreateTimer(false, Random.Range(30, 50) * 1000, () =>
+        TimerMgr.Instance.CreateTimer(false, Random.Range(3, 5) * 1000, () =>
         {
             //随机确定该层是否触发异常事件
             //如果触发异常事件则进入异常事件逻辑
@@ -140,8 +140,8 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
             // 2. 清理乘客 不确定是否每波都清理 这里先写死
             PassengerMgr.Instance.ClearAllPassengers();
 
-            // 3. 增加难度并循环
-            GameLevelMgr.Instance.AddWave();
+            //// 3. 增加难度并循环
+            //GameLevelMgr.Instance.AddWave();
 
             // 检查是否游戏结束，否则继续循环
             //TODO: 游戏结束判断

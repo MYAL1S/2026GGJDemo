@@ -154,7 +154,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             GameObject.Destroy(passenger.gameObject);
         passengerList.Remove(passenger);
         if (!passenger.passengerInfo.isGhost)
-            ResourcesMgr.Instance.SubPassengerTrustValue();
+            ResourcesMgr.Instance.SubPassengerTrustValue(1);
         TrySpawnFromWaitingQueue();
         UpdateDepthAndScale();
     }

@@ -160,11 +160,15 @@ public class EventMgr : BaseSingleton<EventMgr>
         }
     }
 
+    /// <summary>
+    /// 坠入深渊 游戏失败
+    /// </summary>
     public void FallIntoAbyss()
     {
-        Debug.Log("电梯坠入异界，游戏结束");
-        // TODO: 结束流程/结算
-        //调用游戏结束面板
+        UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, panel =>
+        {
+            panel.ShowResult(false);
+        });
     }
 
     private EventMgr() { }

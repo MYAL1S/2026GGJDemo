@@ -37,6 +37,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     /// </summary>
     public void StartElevator()
     {
+        ResourcesMgr.Instance.ResetAllGameData();
         EnterMovingState();
     }
 
@@ -138,7 +139,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         TimerMgr.Instance.CreateTimer(false, 1000, () =>
         {
             CheckResults();
-            PassengerMgr.Instance.ClearAllPassengers();
             EnterMovingState();
         });
     }
@@ -157,7 +157,30 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     /// </summary>
     private void CheckResults()
     {
-        Debug.Log("本轮结算完成");
+        int ghostCount = 0;
+        var list = PassengerMgr.Instance.passengerList;
+        if (list != null)
+        {
+            foreach (var p in list)
+            {
+                if (p != null && p.passengerInfo != null && p.passengerInfo.isGhost && p.gameObject.activeSelf)
+                    ghostCount++;
+            }
+        }
+
+        if (ghostCount > 0)
+            // 扣除信任值（ResourcesMgr 内部已做下限保护与失败判定）
+            ResourcesMgr.Instance.SubPassengerTrustValue(ghostCount);
+        else
+        {
+            //游戏通关
+            Time.timeScale = 0;
+            UIMgr.Instance.GetPanel<GameOverPanel>((panel) =>
+            {
+                //展示游戏胜利界面
+                panel.ShowResult(true);
+            });
+        }    
     }
 
     private ElevatorMgr()

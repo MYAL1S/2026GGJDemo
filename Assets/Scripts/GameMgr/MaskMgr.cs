@@ -94,13 +94,13 @@ public class MaskMgr : BaseSingleton<MaskMgr>
         });
 
 
-        //将隐藏层显示出来
-        Camera.main.cullingMask |= (1 << LayerMask.NameToLayer("HidenLayer"));
-        //持续时间结束后将隐藏层重新隐藏
-        TimerMgr.Instance.CreateTimer(false, maskInfo.durationInMilliseconds, () =>
-        {
-            Camera.main.cullingMask &= ~(1 << LayerMask.NameToLayer("HidenLayer"));
-        });
+        ////将隐藏层显示出来
+        //Camera.main.cullingMask |= (1 << LayerMask.NameToLayer("HidenLayer"));
+        ////持续时间结束后将隐藏层重新隐藏
+        //TimerMgr.Instance.CreateTimer(false, maskInfo.durationInMilliseconds, () =>
+        //{
+        //    Camera.main.cullingMask &= ~(1 << LayerMask.NameToLayer("HidenLayer"));
+        //});
     }
 
     /// <summary>
@@ -108,11 +108,16 @@ public class MaskMgr : BaseSingleton<MaskMgr>
     /// </summary>
     public void MaskEventSubdueEvilGhost()
     {
-        //播放驱散幽灵特效
+        // 若处于异常事件，只用于解除异常
+        if (EventMgr.Instance.IsInUnnormalState)
+        {
+            EventMgr.Instance.ResolveUnnormalBySubdueMask();
+            return;
+        }
 
         //播放面具特效
 
-        //驱散范围内的幽灵
+        //驱散选中的幽灵
 
         #region TestCode
         //此处仅为测试使用 测试完成后请删除

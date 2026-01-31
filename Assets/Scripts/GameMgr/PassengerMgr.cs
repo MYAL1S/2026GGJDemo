@@ -14,8 +14,10 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     private const int   SortingMultiplier = 100;
 
     public List<Passenger> passengerList;
-    private readonly List<PassengerSO> tempNormals = new List<PassengerSO>();
-    private readonly List<PassengerSO> tempGhosts  = new List<PassengerSO>();
+    private readonly List<PassengerSO> tempNormals  = new List<PassengerSO>();
+    private readonly List<PassengerSO> tempGhosts   = new List<PassengerSO>();
+    private readonly List<PassengerSO> tempSpecials = new List<PassengerSO>();
+    private readonly Queue<PassengerSO> waitingQueue = new Queue<PassengerSO>();
 
     private PassengerMgr()
     {
@@ -27,60 +29,97 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     }
 
     /// <summary>
-    /// 生成一波乘客
+    /// 生成一波乘客（受点位容量限制，超出进入等待队列）    
     /// </summary>
     public void SpawnWave()
     {
         ClearAllPassengers();
+        waitingQueue.Clear();
 
-        // 随机打乱生成点
-        List<Vector3> availablePoints = new List<Vector3>(GameLevelMgr.Instance.currentLevelDetail.passengerSpawnPositionArray);
-        Shuffle(availablePoints);
+        List<Vector3> spawnPoints = new List<Vector3>(GameLevelMgr.Instance.currentLevelDetail.passengerSpawnPositionArray);
+        Shuffle(spawnPoints);
+        int capacity = spawnPoints.Count;
+        int spawnIndex = 0;
+        int capacityLeft = capacity;
 
-        // 准备候选并打乱，保证本波不重复
-        PrepareCandidates(tempNormals, isGhost: false);
-        PrepareCandidates(tempGhosts,  isGhost: true);
+        // 准备候选
+        PrepareCandidates(tempNormals,  isGhost: false);
+        PrepareCandidates(tempGhosts,   isGhost: true);
+        PrepareSpecialCandidates(tempSpecials);
 
-        int ghostCount  = GameLevelMgr.Instance.currentLevelDetail.ghostCount;
-        int normalCount = GameLevelMgr.Instance.currentLevelDetail.normalPassengerCount;
+        int ghostCount   = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.ghostCount,  tempGhosts.Count);
+        int normalCount  = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.normalPassengerCount, tempNormals.Count);
+        int specialCount = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.specialPassengerCount, tempSpecials.Count);
 
-        // 防御：可用数量不足时截断
-        ghostCount  = Mathf.Min(ghostCount, tempGhosts.Count);
-        normalCount = Mathf.Min(normalCount, tempNormals.Count);
-        int needed = ghostCount + normalCount;
-        if (needed > availablePoints.Count) needed = availablePoints.Count;
+        // 先生成特殊乘客，占用容量
+        int specialsSpawned = 0;
+        for (int i = 0; i < specialCount; i++)
+        {
+            if (capacityLeft <= 0) { waitingQueue.Enqueue(tempSpecials[i]); continue; }
+            GeneratePassenger(tempSpecials[i], spawnPoints[spawnIndex++]);
+            capacityLeft--;
+            specialsSpawned++;
+        }
 
-        int idx = 0;
-        // 先生成鬼魂（可按需求调整顺序）
-        for (int i = 0; i < ghostCount && idx < availablePoints.Count; i++, idx++)
-            GeneratePassenger(tempGhosts[i], availablePoints[idx]);
+        // 再生成鬼魂
+        int ghostsSpawned = 0;
+        int gi = 0;
+        while (ghostsSpawned < ghostCount)
+        {
+            if (gi >= tempGhosts.Count) break;
+            if (capacityLeft <= 0) { waitingQueue.Enqueue(tempGhosts[gi++]); continue; }
+            GeneratePassenger(tempGhosts[gi++], spawnPoints[spawnIndex++]);
+            capacityLeft--;
+            ghostsSpawned++;
+        }
 
-        // 再生成普通乘客
-        for (int i = 0; i < normalCount && idx < availablePoints.Count; i++, idx++)
-            GeneratePassenger(tempNormals[i], availablePoints[idx]);
+        // 最后生成普通乘客
+        int normalsSpawned = 0;
+        int ni = 0;
+        while (normalsSpawned < normalCount)
+        {
+            if (ni >= tempNormals.Count) break;
+            if (capacityLeft <= 0) { waitingQueue.Enqueue(tempNormals[ni++]); continue; }
+            GeneratePassenger(tempNormals[ni++], spawnPoints[spawnIndex++]);
+            capacityLeft--;
+            normalsSpawned++;
+        }
+
+        // 刷新深度和缩放
+        UpdateDepthAndScale();
     }
 
     /// <summary>
     /// 准备乘客候选列表
     /// </summary>
-    /// <param name="buffer">缓冲列表 用于暂存乘客候选</param>
-    /// <param name="isGhost">乘客是否为鬼魂</param>
     private void PrepareCandidates(List<PassengerSO> buffer, bool isGhost)
     {
         buffer.Clear();
         foreach (var so in ResourcesMgr.Instance.passengerSOList)
         {
-            if (so != null && so.isGhost == isGhost)
+            if (so != null && so.isGhost == isGhost && !so.isSpecialPassenger)
                 buffer.Add(so);
         }
-        Shuffle(buffer); // 打乱保证随机且不重复取
+        Shuffle(buffer);
+    }
+
+    /// <summary>
+    /// 准备特殊乘客候选列表
+    /// </summary>
+    private void PrepareSpecialCandidates(List<PassengerSO> buffer)
+    {
+        buffer.Clear();
+        foreach (var so in ResourcesMgr.Instance.passengerSOList)
+        {
+            if (so != null && so.isSpecialPassenger)
+                buffer.Add(so);
+        }
+        Shuffle(buffer);
     }
 
     /// <summary>
     /// 生成乘客 此处直接将乘客实例化到场景中
     /// </summary>
-    /// <param name="data">乘客数据</param>
-    /// <param name="position">乘客位置</param>
     private void GeneratePassenger(PassengerSO data, Vector3 position)
     {
         if (data == null)
@@ -106,10 +145,50 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     }
 
     /// <summary>
+    /// 当某乘客被踢出/移除时调用，尝试补位等待队列
+    /// </summary>
+    public void OnPassengerKicked(Passenger passenger)
+    {
+        if (passenger != null)
+            GameObject.Destroy(passenger.gameObject);
+        passengerList.Remove(passenger);
+        TrySpawnFromWaitingQueue();
+        UpdateDepthAndScale();
+    }
+
+    /// <summary>
+    /// 尝试从等待队列补位到空余点位
+    /// </summary>
+    private void TrySpawnFromWaitingQueue()
+    {
+        if (waitingQueue.Count == 0)
+            return;
+
+        // 计算当前已占用点位，寻找空位
+        var spawnPoints = GameLevelMgr.Instance.currentLevelDetail.passengerSpawnPositionArray;
+        foreach (var pos in spawnPoints)
+        {
+            bool occupied = false;
+            for (int i = 0; i < passengerList.Count; i++)
+            {
+                if (passengerList[i] == null) continue;
+                if (Vector3.Distance(passengerList[i].transform.position, pos) < 0.01f)
+                {
+                    occupied = true;
+                    break;
+                }
+            }
+            if (!occupied && waitingQueue.Count > 0)
+            {
+                var data = waitingQueue.Dequeue();
+                GeneratePassenger(data, pos);
+            }
+        }
+    }
+
+    /// <summary>
     /// 随机打乱列表顺序
     /// </summary>
-    /// <typeparam name="T">列表类型</typeparam>
-    /// <param name="list">传入的列表</param>
     private void Shuffle<T>(List<T> list)
     {
         for (int i = 0; i < list.Count; i++)
@@ -125,6 +204,10 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// <param name="passenger"></param>
     private void OnPassengerClicked(Passenger passenger)
     {
+
+        //TODO: 处理乘客点击逻辑
+        //应该显示一个小的二级面板 对乘客进行交互
+        //此处仅作示例输出
         if (passenger == null)
             return;
         //此处应该显示UI等逻辑

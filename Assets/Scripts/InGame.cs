@@ -2,13 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Main : MonoBehaviour
+public class InGame : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()
     {
         //#region TestCode
-        ////此处仅为测试使用 测试完成后请删除
+        ////姝ゅ浠呬负娴嬭瘯浣跨敤 娴嬭瘯瀹屾垚鍚庤鍒犻櫎
         //UIMgr.Instance.ShowPanel<GamePanel>();
         //ResMgr.Instance.LoadAsync<GameObject>("ResourcesMgr/ResourcesMgr", (obj) =>
         //{
@@ -34,9 +34,9 @@ public class Main : MonoBehaviour
         //});
 
         //#endregion
-        UIMgr.Instance.ShowPanel<LoginPanel>();
-        // UIMgr.Instance.ShowPanel<UIBackgroundPanel>(E_UILayer.Bottom);
-        // UIMgr.Instance.ShowPanel<GamePanel>();
+        // UIMgr.Instance.ShowPanel<LoginPanel>();
+        UIMgr.Instance.ShowPanel<UIBackgroundPanel>(E_UILayer.Bottom);
+        UIMgr.Instance.ShowPanel<GamePanel>();
     }
 
     // Update is called once per frame

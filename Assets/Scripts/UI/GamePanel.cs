@@ -39,6 +39,7 @@ public class GamePanel : BasePanel
     private Passenger nowSelectedPassenger;
 
 
+
     public override void Init()
     {
         base.Init();
@@ -86,7 +87,7 @@ public class GamePanel : BasePanel
                 //驱逐乘客事件
                 ExpelSelectedPassenger();
                 break;
-            case "BtnReturn":
+            case "BtnCancel":
                 //关闭乘客交互面板UI
                 HidePassengerPanelUI();
                 break;
@@ -189,6 +190,6 @@ public class GamePanel : BasePanel
     /// </summary>
     private void UpdateMirrorUI()
     {
-        
+        print("更新镜子UI");
     }
 }

@@ -16,4 +16,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 385cb19566d90bc459bd049d30af1b75, type: 2}
   - {fileID: 11400000, guid: af1786e0c36c473429961552247865af, type: 2}
   - {fileID: 11400000, guid: 72e0ef21681ca3f44b907f182b7c7e4c, type: 2}
-  createMirrorLevelIndex: 01000000
+  createMirrorLevelIndex: 000000000100000002000000

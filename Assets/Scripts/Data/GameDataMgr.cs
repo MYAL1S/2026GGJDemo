@@ -11,22 +11,11 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     private SettingInfo settingInfo;
     public SettingInfo SettingInfo => settingInfo;
 
-
-    /// <summary>
-    /// 保存当前的设置数据到本地
-    /// </summary>
-    public void SaveSettingData()
-    {
-        JsonMgr.Instance.SaveData(settingInfo,"Settings");
-    }
-
-
     /// <summary>
     /// 记录角色信息 如灵能值 当前拥有的面具等
     /// </summary>
     private PlayerInfo playerInfo;
     public PlayerInfo PlayerInfo => playerInfo;
-
 
     /// <summary>
     /// 记录电梯信息 如稳定值 电梯容量等
@@ -40,29 +29,28 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     private List<MaskInfo> maskInfoList;
     public List<MaskInfo> MaskInfoList => maskInfoList;
 
+    // --- 灵能过低提示音相关 ---
+    private const int LowPsychicThreshold = 5;
+    // 请将低灵能警告音效放在 Resources/Music/26GGJsound/percentlow 路径下，或修改此常量
+    private const string LowPsychicSoundPath = "Music/26GGJsound/percentlow";
+    private AudioSource lowPsychicLoopSource;
+    private bool lowPsychicSoundLoading;
 
     private GameDataMgr()
     {
-        ////在调用构造函数时加载关卡数据信息
-        ////关卡信息存储在StreamingAssets/LevelInfo.json文件中
-        ////可以通过Excel配置之后转为json文件进行存储
-        //levelInfoList = JsonMgr.Instance.LoadData<List<LevelInfo>>("LevelInfo");
-
-
-        //在调用构造函数时加载角色数据信息
-        //角色信息存储在StreamingAssets/PlayerInfo.json文件中
+        // 在调用构造函数时加载角色/电梯/面具/设置数据信息
         playerInfo = JsonMgr.Instance.LoadData<PlayerInfo>("PlayerInfo");
-        ////在调用构造函数时加载乘客数据信息
-        ////乘客信息存储在StreamingAssets/PassengerInfo.json文件中
-        //passengerInfoList = JsonMgr.Instance.LoadData<List<PassengerInfo>>("PassengerInfo");
-        //在调用构造函数时加载电梯数据信息
-        //电梯信息存储在StreamingAssets/ElevatorInfo.json文件中
         elevatorInfo = JsonMgr.Instance.LoadData<ElevatorInfo>("ElevatorInfo");
-        //在调用构造函数时加载面具数据信息
-        //面具信息存储在StreamingAssets/MaskInfo.json文件中
         maskInfoList = JsonMgr.Instance.LoadData<List<MaskInfo>>("MaskInfo");
-
         settingInfo = JsonMgr.Instance.LoadData<SettingInfo>("Settings");
+    }
+
+    /// <summary>
+    /// 保存当前的设置数据到本地
+    /// </summary>
+    public void SaveSettingData()
+    {
+        JsonMgr.Instance.SaveData(settingInfo,"Settings");
     }
 
     /// <summary>
@@ -73,6 +61,50 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
         JsonMgr.Instance.SaveData(playerInfo, "PlayerInfo");
     }
 
+    /// <summary>
+    /// FixedUpdate 中检测灵能值，低于阈值则循环播放警告音，恢复则停止
+    /// </summary>
+    public void CheckPsychicPowerWarning()
+    {
+        if (playerInfo == null)
+            return;
+
+        if (playerInfo.nowPsychicPowerValue < LowPsychicThreshold)
+        {
+            // 尚未播放且未在加载，开始加载并播放
+            if (lowPsychicLoopSource == null && !lowPsychicSoundLoading)
+            {
+                lowPsychicSoundLoading = true;
+                MusicMgr.Instance.PlaySound(LowPsychicSoundPath, true, source =>
+                {
+                    lowPsychicSoundLoading = false;
+                    // 如果加载完成时灵能已恢复，则立刻停止
+                    if (playerInfo.nowPsychicPowerValue >= LowPsychicThreshold)
+                    {
+                        MusicMgr.Instance.StopSound(source);
+                        return;
+                    }
+                    lowPsychicLoopSource = source;
+                });
+            }
+        }
+        else
+        {
+            StopLowPsychicSound();
+        }
+    }
+
+    /// <summary>
+    /// 停止低灵能警告音
+    /// </summary>
+    private void StopLowPsychicSound()
+    {
+        if (lowPsychicLoopSource != null)
+        {
+            MusicMgr.Instance.StopSound(lowPsychicLoopSource);
+            lowPsychicLoopSource = null;
+        }
+    }
 
     /// <summary>
     /// 增加玩家灵能值

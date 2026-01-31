@@ -120,22 +120,11 @@ public class MaskMgr : BaseSingleton<MaskMgr>
             return;
         }
 
-        //播放面具特效
+        //播放鬼魂出现音效
+        MusicMgr.Instance.PlaySound("Music/26GGJsound/ghost_disappear", false);
 
         //驱散选中的幽灵
 
-        #region TestCode
-        //此处仅为测试使用 测试完成后请删除
-        PassengerMgr.Instance.passengerList.ForEach(x =>
-        {
-            if (x.passengerInfo.isGhost)
-            {
-                //驱散该幽灵
-                x.gameObject.SetActive(false);
-                //从关卡乘客列表中移除该幽灵
-            }
-        });
-        #endregion
     }
 
     /// <summary>

@@ -155,6 +155,8 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         passengerList.Remove(passenger);
         if (!passenger.passengerInfo.isGhost)
             ResourcesMgr.Instance.SubPassengerTrustValue(1);
+        if (passenger.passengerInfo.isGhost)
+            MusicMgr.Instance.PlaySound("Music/26GGJsound/ghost_disappear", false);
         TrySpawnFromWaitingQueue();
         UpdateDepthAndScale();
     }

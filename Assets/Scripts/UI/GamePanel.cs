@@ -17,6 +17,16 @@ public class GamePanel : BasePanel
     private Transform passengerPanelObj;
     private Passenger nowSelectedPassenger;
 
+    /// <summary>
+    /// 手机物品
+    /// </summary>
+    private PhoneItem phoneItem;
+
+    /// <summary>
+    /// 铃铛物品
+    /// </summary>
+    private BellItem bellItem;
+
     public override void Init()
     {
         base.Init();
@@ -28,6 +38,9 @@ public class GamePanel : BasePanel
         passengerPanel = GetControl<RawImage>("PassengerPanel");
         passengerPanelObj = passengerPanel.GetComponent<Transform>();
 
+        // 初始化物品系统
+        InitItemSystem();
+
         // 注册事件
         EventCenter.Instance.AddEventListener<int>(E_EventType.E_UpdateMaskUI, UpdateMaskUI);
         EventCenter.Instance.AddEventListener(E_EventType.E_MirrorUIUpdate, UpdateMirrorUI);
@@ -35,19 +48,60 @@ public class GamePanel : BasePanel
 
         HideMirrorUI();
 
-        // 初始化玩家面具数据
-        InitPlayerMaskData();
-
-        // 注册按键检测到 MonoMgr
-        MonoMgr.Instance.AddUpdateListener(DetectMaskInput);
+        // 初始化玩家数据
+        InitPlayerData();
 
         Debug.Log("[GamePanel] 初始化完成");
     }
 
     /// <summary>
-    /// 初始化玩家面具数据
+    /// 初始化物品系统
     /// </summary>
-    private void InitPlayerMaskData()
+    private void InitItemSystem()
+    {
+        // 加载物品配置
+        ItemConfigSO itemConfig = Resources.Load<ItemConfigSO>("Config/ItemConfig");
+
+        var phoneObj = transform.Find("PhoneItem");
+        if (phoneObj != null)
+        {
+            phoneItem = phoneObj.GetComponent<PhoneItem>();
+            if (phoneItem == null)
+                phoneItem = phoneObj.gameObject.AddComponent<PhoneItem>();
+
+            phoneItem.SetRenderTextureRoot(renderTextureObj.gameObject);
+            if (itemConfig != null)
+                phoneItem.SetItemConfig(itemConfig);
+        }
+        else
+        {
+            Debug.LogWarning("[GamePanel] 未找到 PhoneItem 对象");
+        }
+
+        var bellObj = transform.Find("BellItem");
+        if (bellObj != null)
+        {
+            bellItem = bellObj.GetComponent<BellItem>();
+            if (bellItem == null)
+                bellItem = bellObj.gameObject.AddComponent<BellItem>();
+
+            if (itemConfig != null)
+                bellItem.SetItemConfig(itemConfig);
+        }
+        else
+        {
+            Debug.LogWarning("[GamePanel] 未找到 BellItem 对象");
+        }
+
+        // 确保隐藏层UI初始状态为失活
+        if (renderTextureObj != null)
+            renderTextureObj.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 初始化玩家数据
+    /// </summary>
+    private void InitPlayerData()
     {
         var playerInfo = GameDataMgr.Instance.PlayerInfo;
         if (playerInfo == null)
@@ -56,60 +110,11 @@ public class GamePanel : BasePanel
             return;
         }
 
-        // 确保面具列表存在
-        if (playerInfo.gotMaskIDList == null)
-            playerInfo.gotMaskIDList = new List<int>();
+        // 确保有初始灵能值
+        if (playerInfo.nowPsychicPowerValue <= 0)
+            playerInfo.nowPsychicPowerValue = playerInfo.maxPsychicPowerValue;
 
-        // 添加默认面具 1, 2, 3
-        if (!playerInfo.gotMaskIDList.Contains(1))
-            playerInfo.gotMaskIDList.Add(1);
-        if (!playerInfo.gotMaskIDList.Contains(2))
-            playerInfo.gotMaskIDList.Add(2);
-        if (!playerInfo.gotMaskIDList.Contains(3))
-            playerInfo.gotMaskIDList.Add(3);
-
-        // 默认装备普通面具
-        if (playerInfo.nowMaskID == 0)
-            playerInfo.nowMaskID = 1;
-
-        // 确保所有面具可用
-        var maskList = GameDataMgr.Instance.MaskInfoList;
-        if (maskList != null)
-        {
-            foreach (var mask in maskList)
-            {
-                if (mask != null)
-                    mask.canUseInElevator = true;
-            }
-        }
-
-        Debug.Log($"[GamePanel] 玩家面具: [{string.Join(",", playerInfo.gotMaskIDList)}]");
-    }
-
-    /// <summary>
-    /// 检测面具切换按键（每帧调用）
-    /// </summary>
-    private void DetectMaskInput()
-    {
-        // 电梯不可用时不检测
-        if (!ElevatorMgr.Instance.CanUseMask)
-            return;
-
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            Debug.Log("[GamePanel] 按下按键 1");
-            MaskMgr.Instance.TryUseMask(1);
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            Debug.Log("[GamePanel] 按下按键 2");
-            MaskMgr.Instance.TryUseMask(2);
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            Debug.Log("[GamePanel] 按下按键 3");
-            MaskMgr.Instance.TryUseMask(3);
-        }
+        Debug.Log($"[GamePanel] 当前灵能值: {playerInfo.nowPsychicPowerValue}");
     }
 
     /// <summary>
@@ -121,10 +126,6 @@ public class GamePanel : BasePanel
         base.OnButtonClick(name);
         switch (name)
         {
-            case "BtnMask":
-                // 点击按钮使用当前面具
-                MaskMgr.Instance.TryUseMask(GameDataMgr.Instance.PlayerInfo.nowMaskID);
-                break;
             case "BtnGaze":
                 //触发观看铜镜事件
                 EventMgr.Instance.StartWatchMirror();
@@ -252,6 +253,5 @@ public class GamePanel : BasePanel
     public override void HideMe()
     {
         base.HideMe();
-        MonoMgr.Instance.RemoveUpdateListener(DetectMaskInput);
     }
 }

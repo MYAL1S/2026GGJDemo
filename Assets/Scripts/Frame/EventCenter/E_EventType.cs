@@ -65,4 +65,6 @@ public enum E_EventType
     /// 乘客UI出现事件-参数：无
     /// </summary>
     E_PassengerUIAppear,
+    E_UnnormalEventStart,
+    E_UnnormalEventResolved,
 }

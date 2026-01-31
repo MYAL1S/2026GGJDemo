@@ -1,11 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using UnityEngine;
 
 /// <summary>
 /// 乘客逻辑脚本
-/// 挂载在乘客预制体上
+/// 挂载于乘客预制体上
 /// </summary>
 public class Passenger : MonoBehaviour
 {
@@ -18,15 +17,31 @@ public class Passenger : MonoBehaviour
     /// </summary>
     public SpriteRenderer ghostFeatureRenderer;
     /// <summary>
-    /// 该乘客的配置数据
+    /// 该乘客的数据配置
     /// </summary>
     [HideInInspector]
     public PassengerSO passengerInfo;
 
     /// <summary>
+    /// 高亮颜色
+    /// </summary>
+    [SerializeField]
+    private Color highlightColor = new Color(1f, 1f, 0.5f, 1f);
+
+    /// <summary>
+    /// 原始颜色
+    /// </summary>
+    private Color originalColor = Color.white;
+
+    /// <summary>
+    /// 是否处于高亮状态
+    /// </summary>
+    private bool isHighlighted = false;
+
+    /// <summary>
     /// 初始化乘客信息
     /// </summary>
-    /// <param name="passengerSO">乘客配置ScriptableObject</param>
+    /// <param name="passengerSO">乘客数据ScriptableObject</param>
     public void Init(PassengerSO passengerSO)
     {
         passengerInfo = passengerSO;
@@ -36,9 +51,41 @@ public class Passenger : MonoBehaviour
         ghostFeatureRenderer.sprite = passengerSO.ghostSprite;
         ghostFeatureRenderer.gameObject.SetActive(true);
         ghostFeatureRenderer.sortingOrder = passengerSO.oderInLayer + 1;
+
+        // 保存原始颜色
+        originalColor = mainRender.color;
     }
 
-    // 模拟被面具“揭露”时的响应（MaskSystem使用）
+    /// <summary>
+    /// 设置高亮状态
+    /// </summary>
+    /// <param name="highlight">是否高亮</param>
+    public void SetHighlight(bool highlight)
+    {
+        if (isHighlighted == highlight)
+            return;
+
+        isHighlighted = highlight;
+
+        if (highlight)
+        {
+            // 高亮显示
+            mainRender.color = highlightColor;
+            if (ghostFeatureRenderer != null && ghostFeatureRenderer.gameObject.activeSelf)
+                ghostFeatureRenderer.color = highlightColor;
+        }
+        else
+        {
+            // 恢复原始颜色
+            mainRender.color = originalColor;
+            if (ghostFeatureRenderer != null)
+                ghostFeatureRenderer.color = originalColor;
+        }
+    }
+
+    /// <summary>
+    /// 模拟被揭露/暴露时（响应MaskSystem使用）
+    /// </summary>
     public void OnMaskReveal(bool maskActive)
     {
         if (passengerInfo.isGhost)
@@ -52,7 +99,7 @@ public class Passenger : MonoBehaviour
     /// </summary>
     public void OnMouseDown()
     {
-        // 非停靠状态禁止交互，防止在电梯运行时仍能点击
+        // 停靠状态才允许点击，防止在电梯运行时能点击
         if (!ElevatorMgr.Instance.CanInteractPassengers)
             return;
 
@@ -60,15 +107,19 @@ public class Passenger : MonoBehaviour
         EventCenter.Instance.EventTrigger<Passenger>(E_EventType.E_PassengerClicked, this);
     }
 
-    // Start is called before the first frame update
     void Start()
     {
-
     }
 
-    // Update is called once per frame
     void Update()
     {
+    }
 
+    /// <summary>
+    /// 对象销毁时确保取消高亮
+    /// </summary>
+    private void OnDestroy()
+    {
+        isHighlighted = false;
     }
 }

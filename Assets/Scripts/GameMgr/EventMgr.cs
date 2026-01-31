@@ -17,32 +17,33 @@ public class EventMgr : BaseSingleton<EventMgr>
     /// </summary>
     private FogPanel fogPanel;
     /// <summary>
-    /// 异常倒计时
+    /// 异常事件定时
     /// </summary>
     private int abnormalTimerId;
     /// <summary>
-    /// 是否处于异常状态
+    /// 是否在异常状态
     /// </summary>
     private bool isUnnormalState;
-    public bool IsInUnnormalState => isUnnormalState;  // 新增只读访问
+    public bool IsInUnnormalState => isUnnormalState;
 
     /// <summary>
-    /// 开始观看铜镜（受镜像次数配额限制）
+    /// 异常事件超时时间（毫秒）
+    /// </summary>
+    private const int AbnormalTimeout = 10000;
+
+    /// <summary>
+    /// 开始观看铜镜（灵能恢复，鬼魂靠近）
     /// </summary>
     public void StartWatchMirror()
     {
-
-        // 若已有定时器，先清理
         if (timerID != 0)
         {
             TimerMgr.Instance.RemoveTimer(timerID);
             timerID = 0;
         }
 
-        // 凝视镜面：每3秒恢复30%灵能，持续10秒
         timerID = TimerMgr.Instance.CreateTimer(false, 10000, () =>
         {
-            // 结束时刷新UI
             EventCenter.Instance.EventTrigger(E_EventType.E_MirrorUIUpdate);
             timerID = 0;
         }, 3000,
@@ -55,10 +56,8 @@ public class EventMgr : BaseSingleton<EventMgr>
             EventCenter.Instance.EventTrigger(E_EventType.E_MirrorUIUpdate);
         });
 
-        // 触发鬼魂靠近事件
         PassengerMgr.Instance.GhostApproaching();
 
-        // 显示雾气面板（缓慢淡入），如无 CanvasGroup 则补一个
         UIMgr.Instance.ShowPanel<FogPanel>(E_UILayer.Top, panel =>
         {
             fogPanel = panel;
@@ -73,22 +72,21 @@ public class EventMgr : BaseSingleton<EventMgr>
     /// </summary>
     public void StopWatchMirror()
     {
-        // 停止灵能恢复
         if (timerID != 0)
         {
             TimerMgr.Instance.RemoveTimer(timerID);
             timerID = 0;
         }
 
-        // 鬼魂停止靠近
         PassengerMgr.Instance.StopGhostApproaching();
 
-        // 雾气缓慢淡出并隐藏面板
         StartFogFade(fogPanel != null ? fogPanel.GetComponent<CanvasGroup>()?.alpha ?? 1f : 1f,
                      0f, 1.0f, hideAfterFade: true);
     }
 
-    /// <summary>控制雾气淡入淡出</summary>
+    /// <summary>
+    /// 雾气面板淡入淡出
+    /// </summary>
     private void StartFogFade(float from, float to, float duration, bool hideAfterFade)
     {
         if (fogCoroutine != null)
@@ -130,13 +128,21 @@ public class EventMgr : BaseSingleton<EventMgr>
     /// </summary>
     public void UnnormalEvent()
     {
-        // 楼层显示异常
-        ElevatorMgr.Instance.ChangeLevelUI(-18);
+        if (isUnnormalState)
+            return;
 
         isUnnormalState = true;
 
-        // 3 秒后未解除则坠入异界
-        abnormalTimerId = TimerMgr.Instance.CreateTimer(false, 3000, () =>
+        // 楼层显示异常
+        ElevatorMgr.Instance.ChangeLevelUI(-18);
+
+        Debug.Log("[EventMgr] 异常事件触发！需要晃动铃铛解决");
+
+        // 触发异常事件开始事件（通知电梯暂停）
+        EventCenter.Instance.EventTrigger(E_EventType.E_UnnormalEventStart);
+
+        // 超时未解决则坠入深渊
+        abnormalTimerId = TimerMgr.Instance.CreateTimer(false, AbnormalTimeout, () =>
         {
             if (!isUnnormalState) return;
             FallIntoAbyss();
@@ -144,20 +150,50 @@ public class EventMgr : BaseSingleton<EventMgr>
     }
 
     /// <summary>
-    /// 使用镇邪面具解除异常
+    /// 使用镇邪面具解决异常（保留兼容旧代码）
     /// </summary>
     public void ResolveUnnormalBySubdueMask()
+    {
+        ResolveUnnormal();
+    }
+
+    /// <summary>
+    /// 使用铃铛解决异常事件
+    /// </summary>
+    public void ResolveUnnormalByBell()
+    {
+        if (!isUnnormalState)
+            return;
+
+        Debug.Log("[EventMgr] 铃铛成功解决异常事件");
+
+        // 播放解决音效
+        MusicMgr.Instance.PlaySound("Music/26GGJsound/bell_ring", false);
+
+        ResolveUnnormal();
+    }
+
+    /// <summary>
+    /// 解决异常事件的通用方法
+    /// </summary>
+    private void ResolveUnnormal()
     {
         if (!isUnnormalState)
             return;
 
         isUnnormalState = false;
 
+        // 取消超时定时器
         if (abnormalTimerId != 0)
         {
             TimerMgr.Instance.RemoveTimer(abnormalTimerId);
             abnormalTimerId = 0;
         }
+
+        Debug.Log("[EventMgr] 异常事件已解决");
+
+        // 触发异常事件解决事件（通知电梯继续）
+        EventCenter.Instance.EventTrigger(E_EventType.E_UnnormalEventResolved);
     }
 
     /// <summary>
@@ -165,6 +201,20 @@ public class EventMgr : BaseSingleton<EventMgr>
     /// </summary>
     public void FallIntoAbyss()
     {
+        isUnnormalState = false;
+
+        // 取消超时定时器
+        if (abnormalTimerId != 0)
+        {
+            TimerMgr.Instance.RemoveTimer(abnormalTimerId);
+            abnormalTimerId = 0;
+        }
+
+        Debug.Log("[EventMgr] 坠入深渊，游戏失败");
+
+        // 停止电梯
+        ElevatorMgr.Instance.StopElevator();
+
         UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, (panel) =>
         {
             panel.ShowResult(false);

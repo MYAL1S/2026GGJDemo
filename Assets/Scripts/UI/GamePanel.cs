@@ -221,10 +221,15 @@ public class GamePanel : BasePanel
                 EventMgr.Instance.StopWatchMirror();
                 break;
             case "BtnSetup":
+                UIMgr.Instance.HidePanel<GamePanel>();
+                UIMgr.Instance.ShowPanel<OptionsPanel>(E_UILayer.Middle);
                 break;
             case "BtnReturn":
+                UIMgr.Instance.HidePanel<GamePanel>();
+                UIMgr.Instance.ShowPanel<MainMenuPanel>(E_UILayer.Middle);
                 break;
             case "BtnTip":
+                UIMgr.Instance.ShowPanel<TipPanel>(E_UILayer.Top);
                 break;
         }
     }

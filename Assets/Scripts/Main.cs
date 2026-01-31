@@ -4,8 +4,12 @@ using UnityEngine;
 
 public class Main : MonoBehaviour
 {
+    /// <summary>
+    /// 
+    /// </summary>
     private void Awake()
     {
+        
         UIMgr.Instance.ShowPanel<LoginPanel>(E_UILayer.Middle, (BasePanel) =>
         {
             GameObject go = ResMgr.Instance.Load<GameObject>("ResourcesMgr/ResourcesMgr");

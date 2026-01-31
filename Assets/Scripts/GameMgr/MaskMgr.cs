@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// 面具管理器
@@ -94,6 +95,10 @@ public class MaskMgr : BaseSingleton<MaskMgr>
         });
 
 
+        UIMgr.Instance.GetPanel<GamePanel>((gamePanel) =>
+        {
+            gamePanel.ShowRenderTextureUI(3000);
+        });
         ////将隐藏层显示出来
         //Camera.main.cullingMask |= (1 << LayerMask.NameToLayer("HidenLayer"));
         ////持续时间结束后将隐藏层重新隐藏

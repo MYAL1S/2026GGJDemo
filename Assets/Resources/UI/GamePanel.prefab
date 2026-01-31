@@ -1630,12 +1630,12 @@ GameObject:
   - component: {fileID: 6680105617572026603}
   - component: {fileID: 6117205762270564880}
   m_Layer: 5
-  m_Name: RawImage
+  m_Name: RenderTexture
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8311182341790790738
 RectTransform:
   m_ObjectHideFlags: 0

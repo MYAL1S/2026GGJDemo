@@ -17,9 +17,14 @@ public class EventMgr : BaseSingleton<EventMgr>
     /// </summary>
     private FogPanel fogPanel;
     /// <summary>
+    /// 异常倒计时
+    /// </summary>
+    private int abnormalTimerId;
+    /// <summary>
     /// 是否处于异常状态
     /// </summary>
     private bool isUnnormalState;
+    public bool IsInUnnormalState => isUnnormalState;  // 新增只读访问
 
     /// <summary>
     /// 开始观看铜镜（受镜像次数配额限制）
@@ -131,16 +136,42 @@ public class EventMgr : BaseSingleton<EventMgr>
     /// </summary>
     public void UnnormalEvent()
     {
-        //楼层显示异常
+        // 楼层显示异常
         ElevatorMgr.Instance.ChangeLevelUI(-18);
-        //如果不使用镇邪面具 那么三秒后电梯坠入异界
-        //游戏结束
-        TimerMgr.Instance.CreateTimer(false, 3000, () => 
-        {
 
+        isUnnormalState = true;
+
+        // 3 秒后未解除则坠入异界
+        abnormalTimerId = TimerMgr.Instance.CreateTimer(false, 3000, () =>
+        {
+            if (!isUnnormalState) return;
+            FallIntoAbyss();
         });
     }
 
+    /// <summary>
+    /// 使用镇邪面具解除异常
+    /// </summary>
+    public void ResolveUnnormalBySubdueMask()
+    {
+        if (!isUnnormalState)
+            return;
+
+        isUnnormalState = false;
+
+        if (abnormalTimerId != 0)
+        {
+            TimerMgr.Instance.RemoveTimer(abnormalTimerId);
+            abnormalTimerId = 0;
+        }
+        // 可在此恢复楼层显示等处理
+    }
+
+    private void FallIntoAbyss()
+    {
+        Debug.Log("电梯坠入异界，游戏结束");
+        // TODO: 结束流程/结算
+    }
 
     private EventMgr() { }
 }

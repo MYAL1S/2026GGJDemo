@@ -39,10 +39,12 @@ public class IntroPanel : BasePanel
             SceneMgr.Instance.LoadSceneAsync("GameScene", () =>
             {
                 UIMgr.Instance.HidePanel<IntroPanel>();
+                UIMgr.Instance.ShowPanel<UIBackgroundPanel>(E_UILayer.Bottom);
+                UIMgr.Instance.ShowPanel<GamePanel>(E_UILayer.Middle, (gamePanel) =>
+                {
+                    ElevatorMgr.Instance.StartElevator();
+                });
             });
-            // EventCenter.Instance.AddEventListener<float>(E_EventType.E_LoadScene);
-            print("“—«–ªª÷¡xx≥°æ∞");
-            
         });
     }
 }

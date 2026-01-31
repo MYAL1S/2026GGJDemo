@@ -17,12 +17,22 @@ public class GamePanel : BasePanel
     /// 镜子对象
     /// </summary>
     private Transform mirrorObj;
+    /// <summary>
+    /// 渲染隐藏层的RawImage
+    /// </summary>
+    private RawImage randerTexture;
+    /// <summary>
+    /// 渲染隐藏层的RenderTexture对象
+    /// </summary>
+    private Transform renderTextureObj;
     public override void Init()
     {
         base.Init();
         txtMask = GetControl<Text>("TxtMask");
         imgMirror = GetControl<RawImage>("Mirror");
         mirrorObj = imgMirror.GetComponent<Transform>();
+        randerTexture = GetControl<RawImage>("RenderTexture");
+        renderTextureObj = randerTexture.GetComponent<Transform>();
         //开启面具系统
         MaskMgr.Instance.Start();
         //注册更新面具UI事件
@@ -94,6 +104,26 @@ public class GamePanel : BasePanel
     public void HideMirrorUI()
     {
         mirrorObj.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 显示渲染隐藏层的UI
+    /// </summary>
+    public void ShowRenderTextureUI(int time)
+    {
+        renderTextureObj.gameObject.SetActive(true);
+        TimerMgr.Instance.CreateTimer(false, time, () => 
+        {
+            HideRenderTextureUI();
+        });
+    }
+
+    /// <summary>
+    /// 隐藏渲染隐藏层的UI
+    /// </summary>
+    private void HideRenderTextureUI()
+    {
+        renderTextureObj.gameObject.SetActive(false);
     }
 
     /// <summary>

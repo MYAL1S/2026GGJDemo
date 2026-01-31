@@ -49,7 +49,8 @@ MonoBehaviour:
   passengerPrefab: {fileID: 1078737488579068046, guid: 4e95195fe69bf4342ba53f6c5e1881f8, type: 3}
   passengerSOList:
   - {fileID: 11400000, guid: 6560769b9bb1bb14786412e1f308b5c6, type: 2}
-  waveSOList: []
+  waveSOList:
+  - {fileID: 11400000, guid: 89c6e8fba526770479762d9c2cd77fd7, type: 2}
   passengerTrustValue: 0
   stabilityValue: 0
   maxSpecialPassengerCount: 2

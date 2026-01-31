@@ -10,17 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95c09fff9429fe641a0852bf5cc91b87, type: 3}
-  m_Name: LevelDetail_Level1
+  m_Name: LevelDetail_Level2
   m_EditorClassIdentifier: 
-  passengerSpawnPositionArray:
-  - {x: -0.5, y: 0, z: 0}
-  - {x: 0.5, y: 0, z: 0}
-  - {x: 0, y: 0.5, z: 0}
-  - {x: 0, y: -0.5, z: 0}
-  - {x: 0, y: -0.5, z: 0}
-  - {x: 0, y: -0.5, z: 0}
-  normalPassengerCount: 3
-  ghostCount: 5
-  dockingTime: 1
+  passengerSpawnPositionArray: []
+  normalPassengerCount: 0
+  ghostCount: 0
+  dockingTime: 0
   level: 0
   specialPassengerCount: 0

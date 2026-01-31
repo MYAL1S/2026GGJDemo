@@ -1936,7 +1936,7 @@ GameObject:
   - component: {fileID: 3638406517418016749}
   - component: {fileID: 6541775481466502294}
   m_Layer: 5
-  m_Name: BtnIsSpecialPassenger
+  m_Name: BtnCancel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

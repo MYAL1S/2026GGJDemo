@@ -1,11 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.UI;
-
 
 /// <summary>
 /// 电梯状态枚举
@@ -23,23 +19,25 @@ public enum E_ElevatorState
 /// </summary>
 public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 {
-    /// <summary>
-    /// 当前电梯状态
-    /// </summary>
     private E_ElevatorState currentElevatorState = E_ElevatorState.Stopped;
 
     private Text txtFloor;
-    
+
     private int waveNum = 0;
-    
     private int levelNum = 0;
 
+    // 缓存当前波/层信息
+    private WaveDetailSO currentWave;
+    private LevelDetailSO currentLevelDetail;
+    private int currentLevelIndex;
+    private bool pendingMirrorEvent; // 本次停靠是否应触发铜镜（由 wave 配置决定）
 
     /// <summary>
     /// 开启电梯的方法 进入游戏时调用
     /// </summary>
     public void StartElevator()
     {
+        ResourcesMgr.Instance.ResetAllGameData();
         EnterMovingState();
     }
 
@@ -53,13 +51,11 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
         TimerMgr.Instance.CreateTimer(false, Random.Range(3, 5) * 1000, () =>
         {
-            //随机确定该层是否触发异常事件
-            //如果触发异常事件则进入异常事件逻辑
-            // 随机确定该层是否触发异常事件
-            bool triggerAbnormal = Random.value < 0.2f; // 20% 概率，可按需调整
+            // 随机异常
+            bool triggerAbnormal = Random.value < 0.2f;
             if (triggerAbnormal)
                 EventMgr.Instance.UnnormalEvent();
-            //结束异常事件或者未触发异常事件进入到达状态
+
             EnterArrivingState();
         });
     }
@@ -70,35 +66,35 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     public void EnterArrivingState()
     {
         currentElevatorState = E_ElevatorState.Arriving;
-        Debug.Log("wave : " + waveNum + " level : " + levelNum);
-        var wave = ResourcesMgr.Instance.waveSOList[waveNum];
-        Debug.Log("wave load");
-        if (levelNum >= wave.levelDetails.Count)
+
+        // 选波
+        currentWave = ResourcesMgr.Instance.waveSOList[waveNum];
+        if (levelNum >= currentWave.levelDetails.Count)
         {
-            levelNum = 0; // 重置到当前 wave 的第一个 level
-            waveNum = Random.Range(0,ResourcesMgr.Instance.waveSOList.Count); // 切换到下一个 wave
-            wave = ResourcesMgr.Instance.waveSOList[waveNum];
+            levelNum = 0;
+            waveNum = Random.Range(0, ResourcesMgr.Instance.waveSOList.Count);
+            currentWave = ResourcesMgr.Instance.waveSOList[waveNum];
         }
 
-        // 获取当前楼层
-        int stopFloor = wave.levelDetails[levelNum].level;
-        levelNum++; // 准备下次调用时切换到下一个 level
+        // 选层
+        currentLevelIndex = levelNum;
+        currentLevelDetail = currentWave.levelDetails[currentLevelIndex];
+        GameLevelMgr.Instance.currentLevelDetail = currentLevelDetail; // 更新全局当前关卡
+        levelNum++; // 准备下次
+
+        // 本层是否配置了铜镜事件（基于 wave 的索引列表）
+        pendingMirrorEvent = currentWave.createMirrorLevelIndex != null &&
+                             currentWave.createMirrorLevelIndex.Contains(currentLevelIndex);
 
         // 改变楼层 UI 显示
+        ChangeLevelUI(currentLevelDetail.level);
 
-        ChangeLevelUI(stopFloor);
-
-        // 播放开门动画
-
-
-        // 等待开门动画播放完（假设动画1秒）
+        // 播放开门动画（假设1秒）
         TimerMgr.Instance.CreateTimer(false, 1000, () =>
         {
-            // 门开了，进入交互状态
             EnterStoppedState();
         });
     }
-
 
     /// <summary>
     /// 电梯进入停靠状态(电梯状态3)
@@ -111,10 +107,21 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         // 1. 生成乘客
         PassengerMgr.Instance.SpawnWave();
 
-        // 2. 倒计时（玩家操作时间）
-        TimerMgr.Instance.CreateTimer(false, GameLevelMgr.Instance.currentLevelDetail.dockingTime*1000, () =>
+        // 2. 铜镜事件：一局只可触发 maxMirrorOccourence 次
+        bool canTriggerMirror = pendingMirrorEvent && GameLevelMgr.Instance.TryConsumeMirrorOccurence();
+        UIMgr.Instance.GetPanel<GamePanel>(panel =>
         {
-            // 时间到，关门
+            if (canTriggerMirror)
+                panel.ShowMirrorUI();
+            else
+                panel.HideMirrorUI();
+        });
+        // 当次处理完毕，重置标记
+        pendingMirrorEvent = false;
+
+        // 3. 倒计时（玩家操作时间）
+        TimerMgr.Instance.CreateTimer(false, GameLevelMgr.Instance.currentLevelDetail.dockingTime * 1000, () =>
+        {
             EnterDepartingState();
         }, 100, () =>
         {
@@ -124,44 +131,25 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
     /// <summary>
     /// 电梯进入离开状态(电梯状态4)
-    /// 此处实现结算逻辑和清理乘客
     /// </summary>
     public void EnterDepartingState()
     {
         currentElevatorState = E_ElevatorState.Departing;
 
-        // 播放关门动画
-
-        // 等待关门动画播放完（假设动画1秒）
-        TimerMgr.Instance.CreateTimer(false, 1000, () => 
+        TimerMgr.Instance.CreateTimer(false, 1000, () =>
         {
-            // 1. 结算逻辑
             CheckResults();
-
-            // 2. 清理乘客 不确定是否每波都清理 这里先写死
-            PassengerMgr.Instance.ClearAllPassengers();
-
-            // 3. 增加难度并循环
-            // GameLevelMgr.Instance.AddWave();
-
-            // 检查是否游戏结束，否则继续循环
-            //TODO: 游戏结束判断
-
             EnterMovingState();
         });
-
-
-
     }
 
     /// <summary>
     /// 改变楼层的UI显示
     /// </summary>
-    /// <param name="level"></param>
     public void ChangeLevelUI(int level)
     {
-        //根据当前楼层具体改变ui显示
-
+        // TODO: 根据当前楼层具体改变 UI 显示，例如 txtFloor.text = level.ToString();
+        txtFloor.text = level.ToString();
     }
 
     /// <summary>
@@ -169,13 +157,35 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     /// </summary>
     private void CheckResults()
     {
-        // 调用外部方法检查还剩多少鬼
-        Debug.Log("本轮结算完成");
+        int ghostCount = 0;
+        var list = PassengerMgr.Instance.passengerList;
+        if (list != null)
+        {
+            foreach (var p in list)
+            {
+                if (p != null && p.passengerInfo != null && p.passengerInfo.isGhost && p.gameObject.activeSelf)
+                    ghostCount++;
+            }
+        }
+
+        if (ghostCount > 0)
+            // 扣除信任值（ResourcesMgr 内部已做下限保护与失败判定）
+            ResourcesMgr.Instance.SubPassengerTrustValue(ghostCount);
+        else
+        {
+            //游戏通关
+            Time.timeScale = 0;
+            UIMgr.Instance.GetPanel<GameOverPanel>((panel) =>
+            {
+                //展示游戏胜利界面
+                panel.ShowResult(true);
+            });
+        }    
     }
 
     private ElevatorMgr()
     {
-        UIMgr.Instance.GetPanel<GamePanel>((panel) => 
+        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
         {
             txtFloor = panel.GetControl<Text>("TxtFloor");
         });

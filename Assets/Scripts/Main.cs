@@ -4,16 +4,20 @@ using UnityEngine;
 
 public class Main : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
         UIMgr.Instance.ShowPanel<LoginPanel>(E_UILayer.Middle, (BasePanel) =>
         {
             ResMgr.Instance.LoadAsync<GameObject>("ResourcesMgr/ResourcesMgr", (obj) =>
             {
-                Instantiate(obj);
-            });;
+                GameObject resMgrObj = Instantiate(obj);
+                DontDestroyOnLoad(resMgrObj);
+            });
         });
+    }
+    // Start is called before the first frame update
+    void Start()
+    {
         
     }
 

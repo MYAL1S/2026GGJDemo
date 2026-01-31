@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6368172106609071499}
   - component: {fileID: 8872166395087814474}
+  - component: {fileID: 2065435732691940262}
   m_Layer: 0
   m_Name: PassengerPrefab
   m_TagString: Untagged
@@ -49,6 +50,41 @@ MonoBehaviour:
   mainRender: {fileID: 9028374524921240307}
   ghostFeatureRenderer: {fileID: 920165193852128213}
   passengerInfo: {fileID: 0}
+--- !u!70 &2065435732691940262
+CapsuleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1078737488579068046}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: -0.001858443, y: 0.007433653}
+  m_Size: {x: 0.9943448, y: 1.981256}
+  m_Direction: 0
 --- !u!1 &4024309975094324636
 GameObject:
   m_ObjectHideFlags: 0

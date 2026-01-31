@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5905425140722033952}
-  - component: {fileID: 788461023418739478}
+  - component: {fileID: -4302336912190522441}
   m_Layer: 0
   m_Name: ResourcesMgr
   m_TagString: Untagged
@@ -32,7 +32,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &788461023418739478
+--- !u!114 &-4302336912190522441
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -46,6 +46,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelDetailSOList:
   - {fileID: 11400000, guid: 3248f2d04b6c0a14faea4a2928c16692, type: 2}
+  - {fileID: 11400000, guid: 074843524cd19fc42b4ecf9f2fff4f9c, type: 2}
+  - {fileID: 11400000, guid: 72e0ef21681ca3f44b907f182b7c7e4c, type: 2}
+  - {fileID: 11400000, guid: dae274b9d63bb3e4ab75e54feb1e4b21, type: 2}
+  - {fileID: 11400000, guid: 52496bff4eff9ef45af4fa30f1f2203f, type: 2}
+  - {fileID: 11400000, guid: af1786e0c36c473429961552247865af, type: 2}
+  - {fileID: 11400000, guid: b6b41fa29b322de4a855dcd09127e13a, type: 2}
+  - {fileID: 11400000, guid: fa237df04db02364586949374f6fe667, type: 2}
+  - {fileID: 11400000, guid: 385cb19566d90bc459bd049d30af1b75, type: 2}
   passengerPrefab: {fileID: 1078737488579068046, guid: 4e95195fe69bf4342ba53f6c5e1881f8, type: 3}
   passengerSOList:
   - {fileID: 11400000, guid: 6560769b9bb1bb14786412e1f308b5c6, type: 2}
@@ -54,7 +62,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 00b85aa6ff155af45885ee059b1c3bfe, type: 2}
   waveSOList:
   - {fileID: 11400000, guid: 89c6e8fba526770479762d9c2cd77fd7, type: 2}
-  passengerTrustValue: 0
+  passengerTrustValue: 100
   stabilityValue: 0
   maxSpecialPassengerCount: 2
   maxMirrorOccourence: 1

@@ -31,12 +31,6 @@ public class EventMgr : BaseSingleton<EventMgr>
     /// </summary>
     public void StartWatchMirror()
     {
-        // 配额检查：超出则直接返回
-        if (!GameLevelMgr.Instance.TryConsumeMirrorOccurence())
-        {
-            Debug.Log("镜像次数已达上限");
-            return;
-        }
 
         // 若已有定时器，先清理
         if (timerID != 0)
@@ -164,13 +158,17 @@ public class EventMgr : BaseSingleton<EventMgr>
             TimerMgr.Instance.RemoveTimer(abnormalTimerId);
             abnormalTimerId = 0;
         }
-        // 可在此恢复楼层显示等处理
     }
 
-    private void FallIntoAbyss()
+    /// <summary>
+    /// 坠入深渊 游戏失败
+    /// </summary>
+    public void FallIntoAbyss()
     {
-        Debug.Log("电梯坠入异界，游戏结束");
-        // TODO: 结束流程/结算
+        UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, panel =>
+        {
+            panel.ShowResult(false);
+        });
     }
 
     private EventMgr() { }

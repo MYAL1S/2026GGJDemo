@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FogPanel : BasePanel
+public class TipPanel : BasePanel
 {
 
 }

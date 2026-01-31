@@ -18,5 +18,5 @@ MonoBehaviour:
   bellDetectionRadius: 50
   bellMaxDragTime: 5
   requiredShakeCount: 5
-  shakeThreshold: 30
+  shakeThreshold: 10
   shakeTimeWindow: 0.3

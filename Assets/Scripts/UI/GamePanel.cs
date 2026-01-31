@@ -8,13 +8,43 @@ using UnityEngine.UI;
 /// </summary>
 public class GamePanel : BasePanel
 {
-    private Text txtMask;
+    /// <summary>
+    /// 楼层文本信息
+    /// </summary>
+    private Text txtFloor;
+    /// <summary>
+    /// 电梯到达下一状态的时间信息
+    /// </summary>
+    private Text txtTimeInfo;
+    /// <summary>
+    /// 电梯显示人数图标列表
+    /// </summary>
+    public List<RawImage> humanIconList;
+    /// <summary>
+    /// 能量显示图标列表
+    /// </summary>
+    public List<RawImage> energyIconList;
+    /// <summary>
+    /// 稳定度显示图标列表
+    /// </summary>
+    public List<RawImage> stabilityIconList;
+    /// <summary>
+    /// 箭头显示图标列表
+    /// 下标0为上箭头，下标1为下箭头
+    /// 通过控制RawImage的enabled属性来显示或隐藏箭头
+    /// 实现表现电梯上升以及下降的效果
+    /// </summary>
+    public RawImage[] rawImgUpDownArrow;
+    /// <summary>
+    /// 和镜子相关的UI显示
+    /// </summary>
     private RawImage imgMirror;
     private Transform mirrorObj;
+    /// <summary>
+    /// 和渲染隐藏层相关的UI显示
+    /// </summary>
     private RawImage randerTexture;
     private Transform renderTextureObj;
-    private RawImage passengerPanel;
-    private Transform passengerPanelObj;
     private Passenger nowSelectedPassenger;
 
     /// <summary>
@@ -30,13 +60,12 @@ public class GamePanel : BasePanel
     public override void Init()
     {
         base.Init();
-        txtMask = GetControl<Text>("TxtMask");
+        txtFloor = GetControl<Text>("TxtFloor");
+        txtTimeInfo = GetControl<Text>("TxtTimeInfo");
         imgMirror = GetControl<RawImage>("Mirror");
         mirrorObj = imgMirror.GetComponent<Transform>();
         randerTexture = GetControl<RawImage>("RenderTexture");
         renderTextureObj = randerTexture.GetComponent<Transform>();
-        passengerPanel = GetControl<RawImage>("PassengerPanel");
-        passengerPanelObj = passengerPanel.GetComponent<Transform>();
 
         // 初始化物品系统
         InitItemSystem();
@@ -44,7 +73,7 @@ public class GamePanel : BasePanel
         // 注册事件
         EventCenter.Instance.AddEventListener<int>(E_EventType.E_UpdateMaskUI, UpdateMaskUI);
         EventCenter.Instance.AddEventListener(E_EventType.E_MirrorUIUpdate, UpdateMirrorUI);
-        EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerUIAppear, ShowPassengerPanelUI);
+        //EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerUIAppear, ShowPassengerPanelUI);
 
         HideMirrorUI();
 
@@ -136,13 +165,14 @@ public class GamePanel : BasePanel
                 //取消观看铜镜事件
                 EventMgr.Instance.StopWatchMirror();
                 break;
-            case "BtnExpel":
-                //驱逐乘客事件
-                ExpelSelectedPassenger();
+            case "BtnSetup":
+                //打开设置面板UI
                 break;
-            case "BtnCancel":
-                //关闭乘客交互面板UI
-                HidePassengerPanelUI();
+            case "BtnReturn":
+                //回到主菜单面板UI
+                break;
+            case "BtnTip":
+                //显示提示面板UI
                 break;
             default:
                 break;
@@ -155,22 +185,6 @@ public class GamePanel : BasePanel
     /// <param name="maskID">面具id</param>
     private void UpdateMaskUI(int maskID)
     {
-        switch (maskID)
-        {
-            case 0:
-                txtMask.text = "无面具";
-                break;
-            case 1:
-                txtMask.text = "普通面具";
-                break;
-            case 2:
-                txtMask.text = "破幻面具";
-                break;
-            case 3:
-                txtMask.text = "镇邪面具";
-                break;
-        }
-        Debug.Log($"[GamePanel] 面具UI更新: {txtMask.text}");
     }
 
     /// <summary>
@@ -210,23 +224,6 @@ public class GamePanel : BasePanel
     }
 
     /// <summary>
-    /// 显示乘客交互面板UI
-    /// </summary>
-    private void ShowPassengerPanelUI(Passenger passenger)
-    {
-        passengerPanelObj.gameObject.SetActive(true);
-        nowSelectedPassenger = passenger;
-    }
-
-    /// <summary>
-    /// 隐藏乘客交互面板UI
-    /// </summary>
-    private void HidePassengerPanelUI()
-    {
-        passengerPanelObj.gameObject.SetActive(false);
-    }
-
-    /// <summary>
     /// 驱逐当前选中的乘客
     /// </summary>
     private void ExpelSelectedPassenger()
@@ -236,7 +233,6 @@ public class GamePanel : BasePanel
 
         PassengerMgr.Instance.OnPassengerKicked(nowSelectedPassenger);
         nowSelectedPassenger = null;
-        HidePassengerPanelUI();
     }
 
     /// <summary>

@@ -165,7 +165,7 @@ public class EventMgr : BaseSingleton<EventMgr>
     /// </summary>
     public void FallIntoAbyss()
     {
-        UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, panel =>
+        UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, (panel) =>
         {
             panel.ShowResult(false);
         });

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 27a17f0d79438bd4cbe8eaa94c2fea10
+guid: 40e47f00115ba1a49a84c3d764e4e238
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -121,7 +121,28 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: porter_0
+      rect:
+        serializedVersion: 2
+        x: 6
+        y: 0
+        width: 270
+        height: 342
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9989bd60f89061e4581deb95352d9fdc
+      internalID: -1563239736
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -132,7 +153,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      porter_0: -1563239736
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 61e60e30196d61242b20a1b4702cf70e, type: 3}
-  m_Name: Passenger_Person1
+  m_Name: Passenger_Special
   m_EditorClassIdentifier: 
-  passengerID: 4
-  passengerName: madam
-  normalSprite: {fileID: -1361253078, guid: 3997c6a4f52c0ac4b94f133f9fe5fe49, type: 3}
-  ghostName: madam
-  ghostSprite: {fileID: -1361253078, guid: 3997c6a4f52c0ac4b94f133f9fe5fe49, type: 3}
+  passengerID: 7
+  passengerName: mechanic
+  normalSprite: {fileID: 1851894980, guid: 896269023f64d844e958f0f6162b63fb, type: 3}
+  ghostName: mechanic_special
+  ghostSprite: {fileID: 1182308461, guid: 690dece9c8f80c74092ef2d4d0f953c0, type: 3}
   isGhost: 0
-  isSpecialPassenger: 0
+  isSpecialPassenger: 1
   oderInLayer: 0

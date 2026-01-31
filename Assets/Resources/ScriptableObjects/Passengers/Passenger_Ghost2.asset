@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61e60e30196d61242b20a1b4702cf70e, type: 3}
   m_Name: Passenger_Ghost2
   m_EditorClassIdentifier: 
-  passengerID: 2
-  passengerName: Yellow
-  normalSprite: {fileID: 2103013011, guid: 4a0da08644922d4459fed331cf430adf, type: 3}
-  ghostName: Red
-  ghostSprite: {fileID: 522845743, guid: 4a0da08644922d4459fed331cf430adf, type: 3}
+  passengerID: 1
+  passengerName: maid
+  normalSprite: {fileID: 966604565, guid: f5f82f4a9baffca49aa34372d4a48977, type: 3}
+  ghostName: maid_ghost
+  ghostSprite: {fileID: -68888396, guid: 7e4467107de90b84b9e968a8b44c4e90, type: 3}
   isGhost: 1
   isSpecialPassenger: 0
   oderInLayer: 0

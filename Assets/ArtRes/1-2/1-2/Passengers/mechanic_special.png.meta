@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 27a17f0d79438bd4cbe8eaa94c2fea10
+guid: 690dece9c8f80c74092ef2d4d0f953c0
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -121,7 +121,28 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: mechanic_special_0
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 0
+        width: 256
+        height: 358
+      alignment: 7
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 44afb3cd22a2e0a40a5200e2b8c1d01c
+      internalID: 1182308461
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -132,7 +153,8 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      mechanic_special_0: 1182308461
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

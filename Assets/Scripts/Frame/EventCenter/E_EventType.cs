@@ -61,4 +61,8 @@ public enum E_EventType
     /// 面具镜面UI更新事件-参数：无
     /// </summary>
     E_MirrorUIUpdate,
+    /// <summary>
+    /// 乘客UI出现事件-参数：无
+    /// </summary>
+    E_PassengerUIAppear,
 }

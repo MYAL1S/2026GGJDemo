@@ -165,9 +165,10 @@ public class EventMgr : BaseSingleton<EventMgr>
             abnormalTimerId = 0;
         }
         // 可在此恢复楼层显示等处理
+
     }
 
-    private void FallIntoAbyss()
+    public void FallIntoAbyss()
     {
         Debug.Log("电梯坠入异界，游戏结束");
         // TODO: 结束流程/结算

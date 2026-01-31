@@ -23,14 +23,15 @@ public class IntroPanel : BasePanel
              imgIntro2.gameObject.SetActive(false);
 
         if (imgIntro1 != null)
-            TimerMgr.Instance.CreateTimer(false, 3000, () => 
+            TimerMgr.Instance.CreateTimer(false, 100, () => 
             {
                 imgIntro1.gameObject.SetActive(false);
                 if (imgIntro2 != null)
                     imgIntro2.gameObject.SetActive(true);
             });
-
-        TimerMgr.Instance.CreateTimer(false, 10000, () => 
+        
+        //TODO: change
+        TimerMgr.Instance.CreateTimer(false, 100, () => 
         {
             //如果在切换场景过程中有需要执行的函数
             //可以在事件中心中添加监听 如根据加载进度做处理

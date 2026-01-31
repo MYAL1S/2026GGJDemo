@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95c09fff9429fe641a0852bf5cc91b87, type: 3}
-  m_Name: LevelDetail_Level1
+  m_Name: LevelDetail_Level3
   m_EditorClassIdentifier: 
   passengerSpawnPositionArray:
   - {x: -0.5, y: 0, z: 0}
@@ -22,5 +22,5 @@ MonoBehaviour:
   normalPassengerCount: 3
   ghostCount: 5
   dockingTime: 60
-  level: 1
+  level: 3
   specialPassengerCount: 0

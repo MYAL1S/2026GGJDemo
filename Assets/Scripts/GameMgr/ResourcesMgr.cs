@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using UnityEngine;
 
 /// <summary>
@@ -45,6 +46,17 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     /// </summary>
     public int maxMirrorOccourence;
 
+    /// <summary>
+    /// 降低乘客信任值
+    /// 当调用此方法时 乘客信任值降低10点 不低于0
+    /// 踢错乘客时调用此方法
+    /// </summary>
+    public void SubPassengerTrustValue()
+    {
+        passengerTrustValue -= 10;
+        passengerTrustValue = Mathf.Max(0, passengerTrustValue);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -53,6 +65,9 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     // Update is called once per frame
     void Update()
     {
-        
+        print(passengerTrustValue);
+        //当乘客信任值为0时 游戏失败
+        if (passengerTrustValue <= 0)
+            EventMgr.Instance.FallIntoAbyss();
     }
 }

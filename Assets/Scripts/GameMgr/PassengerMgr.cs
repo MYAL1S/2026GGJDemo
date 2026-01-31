@@ -146,12 +146,15 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
     /// <summary>
     /// 当某乘客被踢出/移除时调用，尝试补位等待队列
+    /// 如果驱逐的是普通乘客，则扣除信任值
     /// </summary>
     public void OnPassengerKicked(Passenger passenger)
     {
         if (passenger != null)
             GameObject.Destroy(passenger.gameObject);
         passengerList.Remove(passenger);
+        if (!passenger.passengerInfo.isGhost)
+            ResourcesMgr.Instance.SubPassengerTrustValue();
         TrySpawnFromWaitingQueue();
         UpdateDepthAndScale();
     }
@@ -208,13 +211,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         //TODO: 处理乘客点击逻辑
         //应该显示一个小的二级面板 对乘客进行交互
         //此处仅作示例输出
-        if (passenger == null)
-            return;
-        //此处应该显示UI等逻辑
-        // 仅作示例输出
-        string result = passenger.passengerInfo.isGhost ? "Ghost" : "Normal";
-        Debug.Log(result);
-        Debug.Log($"Passenger clicked: {(passenger.passengerInfo != null ? passenger.passengerInfo.passengerName : "Unknown")}");
+        EventCenter.Instance.EventTrigger<Passenger>(E_EventType.E_PassengerUIAppear, passenger);
     }
 
     /// <summary>

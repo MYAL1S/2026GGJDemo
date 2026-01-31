@@ -33,4 +33,8 @@ public class PassengerSO : ScriptableObject
     /// 是否为特殊乘客
     /// </summary>
     public bool isSpecialPassenger;
+    /// <summary>
+    /// 在层级中的排序位置
+    /// </summary>
+    public int oderInLayer;
 }

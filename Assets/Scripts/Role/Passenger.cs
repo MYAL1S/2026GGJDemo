@@ -32,13 +32,11 @@ public class Passenger : MonoBehaviour
         passengerInfo = passengerSO;
         // 初始化乘客信息
         mainRender.sprite = passengerSO.normalSprite;
-        if (passengerSO.isGhost)
-        {
-            ghostFeatureRenderer.sprite = passengerSO.ghostSprite;
-            ghostFeatureRenderer.gameObject.SetActive(true);
-        }
-        else
-            ghostFeatureRenderer.gameObject.SetActive(false);
+        mainRender.sortingOrder = passengerSO.oderInLayer;
+        ghostFeatureRenderer.sprite = passengerSO.ghostSprite;
+        ghostFeatureRenderer.gameObject.SetActive(true);
+        ghostFeatureRenderer.sortingOrder = passengerSO.oderInLayer + 1;
+
     }
 
     // 模拟被面具“照妖”时的反应（供MaskSystem调用）

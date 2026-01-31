@@ -72,4 +72,18 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     {
         JsonMgr.Instance.SaveData(playerInfo, "PlayerInfo");
     }
+
+
+    /// <summary>
+    /// 增加玩家灵能值
+    /// </summary>
+    /// <param name="value">灵能值</param>
+    public void AddPlayerPsychicPower(int value)
+    {
+        playerInfo.nowPsychicPowerValue += value;
+        if (playerInfo.nowPsychicPowerValue > playerInfo.maxPsychicPowerValue)
+        {
+            playerInfo.nowPsychicPowerValue = playerInfo.maxPsychicPowerValue;
+        }
+    }
 }

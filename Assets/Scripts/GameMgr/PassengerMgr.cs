@@ -8,6 +8,11 @@ using UnityEngine;
 /// </summary>
 public class PassengerMgr : BaseSingleton<PassengerMgr>
 {
+    // 可配置：近大远小的缩放范围、排序倍增
+    private const float ScaleNear = 1.25f;
+    private const float ScaleFar  = 0.85f;
+    private const int   SortingMultiplier = 100;
+
     public List<Passenger> passengerList;
     private readonly List<PassengerSO> tempNormals = new List<PassengerSO>();
     private readonly List<PassengerSO> tempGhosts  = new List<PassengerSO>();
@@ -139,6 +144,109 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             MathUtil.RayCast2D<Passenger>(Camera.main.ScreenPointToRay(Input.mousePosition), (passenger) => {
                 passenger?.OnMouseDown();
             },1000,1<<LayerMask.NameToLayer("Passenger"));
+        }
+    }
+
+    /// <summary>
+    /// 鬼魂靠近事件
+    /// </summary>
+    public void GhostApproaching()
+    {
+        if (passengerList == null || passengerList.Count == 0)
+            return;
+
+        // 选出“最远”的鬼魂（Y 最大视为更远）
+        Passenger ghost = null;
+        float ghostY = float.MinValue;
+        foreach (var p in passengerList)
+        {
+            if (p != null && p.passengerInfo != null && p.passengerInfo.isGhost)
+            {
+                float y = p.transform.position.y;
+                if (y > ghostY)
+                {
+                    ghostY = y;
+                    ghost = p;
+                }
+            }
+        }
+        if (ghost == null)
+        {
+            UpdateDepthAndScale();
+            return;
+        }
+
+        // 找一个更靠前（Y 更低）的普通乘客来交换
+        Passenger swapTarget = null;
+        float candidateY = float.MaxValue;
+        foreach (var p in passengerList)
+        {
+            if (p == null || p.passengerInfo == null || p.passengerInfo.isGhost)
+                continue;
+
+            float y = p.transform.position.y;
+            if (y < ghostY && y < candidateY)
+            {
+                candidateY = y;
+                swapTarget = p;
+            }
+        }
+
+        // 交换位置（若存在更前的乘客）
+        if (swapTarget != null)
+        {
+            Vector3 ghostPos = ghost.transform.position;
+            ghost.transform.position = swapTarget.transform.position;
+            swapTarget.transform.position = ghostPos;
+        }
+
+        // 交换后统一刷新 SortingOrder 与 Scale
+        UpdateDepthAndScale();
+    }
+
+    /// <summary>
+    /// 停止鬼魂靠近事件
+    /// </summary>
+    public void StopGhostApproaching()
+    {
+        UpdateDepthAndScale();
+    }
+
+    /// <summary>
+    /// 按 Y 轴深度刷新排序与缩放（Y 越低越靠前，越大越远）
+    /// </summary>
+    private void UpdateDepthAndScale()
+    {
+        if (passengerList == null || passengerList.Count == 0)
+            return;
+
+        float minY = float.MaxValue;
+        float maxY = float.MinValue;
+        foreach (var p in passengerList)
+        {
+            if (p == null) continue;
+            float y = p.transform.position.y;
+            minY = Mathf.Min(minY, y);
+            maxY = Mathf.Max(maxY, y);
+        }
+        // 避免除零
+        if (Mathf.Approximately(minY, maxY))
+            maxY = minY + 0.01f;
+
+        foreach (var p in passengerList)
+        {
+            if (p == null) continue;
+            float y = p.transform.position.y;
+            float t = Mathf.InverseLerp(maxY, minY, y); // Y 越低 t 越接近 1
+            float scale = Mathf.Lerp(ScaleFar, ScaleNear, t);
+            int sorting = Mathf.RoundToInt((maxY - y) * SortingMultiplier);
+
+            p.transform.localScale = Vector3.one * scale;
+
+            if (p.mainRender != null)
+                p.mainRender.sortingOrder = sorting;
+            if (p.ghostFeatureRenderer != null)
+                p.ghostFeatureRenderer.sortingOrder = sorting + 1; // 特征层略前
         }
     }
 }

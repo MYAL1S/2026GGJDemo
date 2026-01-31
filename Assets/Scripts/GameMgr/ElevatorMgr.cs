@@ -37,7 +37,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     /// </summary>
     public void StartElevator()
     {
-        ResourcesMgr.Instance.ResetAllGameData();
         EnterMovingState();
     }
 

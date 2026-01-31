@@ -59,7 +59,7 @@ public abstract class BasePanel : MonoBehaviour
         FindChildrenControl<Text>();
         FindChildrenControl<Image>();
         FindChildrenControl<TextMeshProUGUI>();
-
+        FindChildrenControl<RawImage>();
         Init();
     }
 

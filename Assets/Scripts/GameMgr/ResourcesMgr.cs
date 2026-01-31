@@ -36,6 +36,14 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     /// 稳定度值
     /// </summary>
     public int stabilityValue;
+    /// <summary>
+    /// 最多特殊乘客数量
+    /// </summary>
+    public int maxSpecialPassengerCount;
+    /// <summary>
+    /// 最多镜像出现次数
+    /// </summary>
+    public int maxMirrorOccourence;
 
     // Start is called before the first frame update
     void Start()

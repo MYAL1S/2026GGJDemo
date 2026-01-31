@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
 /// 面具管理器
@@ -9,182 +8,223 @@ using UnityEngine.UI;
 public class MaskMgr : BaseSingleton<MaskMgr>
 {
     /// <summary>
+    /// 普通面具ID
+    /// </summary>
+    private const int NormalMaskId = 1;
+
+    /// <summary>
     /// 是否可以切换面具
     /// </summary>
     private bool canSwitchMask = true;
-    public void Start()
+
+    /// <summary>
+    /// 是否有面具效果正在进行中
+    /// </summary>
+    private bool isMaskEffectActive = false;
+
+    private MaskMgr() { }
+
+    /// <summary>
+    /// 尝试使用指定面具（切换 + 触发效果）
+    /// </summary>
+    public void TryUseMask(int maskID)
     {
-        //开启输入检测
-        //可以通过InputMgr的相关方法来更改按键映射
-        InputMgr.Instance.StartOrStopDetectInput(true);
-        InputMgr.Instance.ChangeKeyCodeInfo(E_EventType.E_ItemChangeMask1, KeyCode.Alpha1, InputStatus.Down);
-        InputMgr.Instance.ChangeKeyCodeInfo(E_EventType.E_ItemChangeMask2, KeyCode.Alpha2, InputStatus.Down);
-        InputMgr.Instance.ChangeKeyCodeInfo(E_EventType.E_ItemChangeMask3, KeyCode.Alpha3, InputStatus.Down);
-        EventCenter.Instance.AddEventListener<KeyCode>(E_EventType.E_ItemChangeMask1, MaskSwitching);
-        EventCenter.Instance.AddEventListener<KeyCode>(E_EventType.E_ItemChangeMask2, MaskSwitching);
-        EventCenter.Instance.AddEventListener<KeyCode>(E_EventType.E_ItemChangeMask3, MaskSwitching);
+        Debug.Log($"[MaskMgr] TryUseMask({maskID})");
+
+        // 1. 检查电梯状态（只能在电梯运行状态下使用）
+        if (!ElevatorMgr.Instance.CanUseMask)
+        {
+            Debug.Log("[MaskMgr] 电梯状态不允许使用面具");
+            return;
+        }
+
+        // 2. 检查是否有效果正在进行
+        if (isMaskEffectActive)
+        {
+            Debug.Log("[MaskMgr] 面具效果进行中，无法切换");
+            return;
+        }
+
+        // 3. 检查切换冷却
+        if (!canSwitchMask)
+        {
+            Debug.Log("[MaskMgr] 面具切换冷却中");
+            return;
+        }
+
+        // 4. 检查玩家数据
+        var playerInfo = GameDataMgr.Instance.PlayerInfo;
+        if (playerInfo == null)
+        {
+            Debug.LogError("[MaskMgr] PlayerInfo 为空");
+            return;
+        }
+
+        // 5. 检查是否拥有该面具
+        if (playerInfo.gotMaskIDList == null || !playerInfo.gotMaskIDList.Contains(maskID))
+        {
+            Debug.Log($"[MaskMgr] 未拥有面具: {maskID}");
+            return;
+        }
+
+        // 6. 获取面具配置并检查冷却
+        var maskInfo = GetMaskInfoById(maskID);
+        if (maskInfo != null && !maskInfo.canUseInElevator)
+        {
+            Debug.Log($"[MaskMgr] 面具 {maskID} 正在冷却中");
+            return;
+        }
+
+        // === 通过所有检查，执行切换 ===
+
+        // 切换面具并更新UI
+        SetCurrentMask(maskID);
+        Debug.Log($"[MaskMgr] 成功切换到面具: {maskID}");
+
+        // 触发面具效果
+        TriggerMaskEffect(maskID);
+
+        // 普通面具无需持续时间和冷却控制
+        if (maskID == NormalMaskId)
+            return;
+
+        // 特殊面具：效果期间禁止切换
+        isMaskEffectActive = true;
+        canSwitchMask = false;
+
+        // 获取持续时间（默认3秒）
+        int duration = (maskInfo != null && maskInfo.durationInMilliseconds > 0)
+            ? maskInfo.durationInMilliseconds
+            : 3000;
+
+        // 效果结束后：切回普通面具 + 进入冷却
+        TimerMgr.Instance.CreateTimer(false, duration, () =>
+        {
+            Debug.Log($"[MaskMgr] 面具 {maskID} 效果结束");
+
+            // 切回普通面具
+            SetCurrentMask(NormalMaskId);
+
+            // 恢复切换能力
+            isMaskEffectActive = false;
+            canSwitchMask = true;
+
+            // 该面具进入冷却
+            if (maskInfo != null)
+                StartMaskCooldown(maskInfo);
+        });
     }
 
     /// <summary>
-    /// 根据面具id分发面具事件
+    /// 触发面具效果
     /// </summary>
-    /// <param name="maskID">面具id</param>
-    public void MaskEventHandler(int maskID)
+    private void TriggerMaskEffect(int maskID)
     {
         switch (maskID)
         {
             case 0:
-                MaskEventNoMask();
+                Debug.Log("[MaskMgr] 无面具效果");
                 break;
             case 1:
-                MaskEventNormal();
+                Debug.Log("[MaskMgr] 普通面具效果");
                 break;
             case 2:
-                MaskEventDelusionBreak();
+                Debug.Log("[MaskMgr] 破妄面具效果");
+                EffectDelusionBreak();
                 break;
             case 3:
-                MaskEventSubdueEvilGhost();
-                break;
-            default:
+                Debug.Log("[MaskMgr] 镇邪面具效果");
+                EffectSubdueEvil();
                 break;
         }
     }
 
     /// <summary>
-    /// 没有面具时使用面具的事件
+    /// 破妄面具效果：显示隐藏层
     /// </summary>
-    public void MaskEventNoMask()
+    private void EffectDelusionBreak()
     {
-        //TODO:没有面具时使用面具的事件
-    }
+        var maskInfo = GetMaskInfoById(2);
+        int duration = (maskInfo != null) ? maskInfo.durationInMilliseconds : 3000;
+        int cost = (maskInfo != null) ? maskInfo.psychicPowerValue : 0;
 
-    /// <summary>
-    /// 使用普通面具的事件
-    /// </summary>
-    public void MaskEventNormal()
-    {
-        //TODO:使用普通面具的事件
-    }
-
-    /// <summary>
-    /// 破妄面具事件 显示隐藏的精灵
-    /// </summary>
-    public void MaskEventDelusionBreak()
-    {
-        MaskInfo maskInfo = GameDataMgr.Instance.MaskInfoList[1];
-        //扣除角色灵能值
-        if (GameDataMgr.Instance.PlayerInfo.nowPsychicPowerValue <= maskInfo.psychicPowerValue)
-            return;
-        GameDataMgr.Instance.PlayerInfo.nowPsychicPowerValue -= maskInfo.psychicPowerValue;
-
-        //TODO:
-        //更新灵能值UI
-
-        //播放面具特效
-        #region TestCode
-        //此处仅为测试使用 测试完成后请删除
-        Debug.Log(GameDataMgr.Instance.PlayerInfo.nowPsychicPowerValue);
-        #endregion
-
-        //将面具设置为不可用
-        GameDataMgr.Instance.MaskInfoList[1].canUseInElevator = false;
-        //等待冷却时间结束后将面具设置为可用
-        TimerMgr.Instance.CreateTimer(false, maskInfo.cooldownInMilliseconds, () =>
+        // 扣除灵能值
+        var playerInfo = GameDataMgr.Instance.PlayerInfo;
+        if (cost > 0)
         {
-            GameDataMgr.Instance.MaskInfoList[1].canUseInElevator = true;
-        });
+            if (playerInfo.nowPsychicPowerValue < cost)
+            {
+                Debug.Log("[MaskMgr] 灵能值不足");
+                return;
+            }
+            playerInfo.nowPsychicPowerValue -= cost;
+            Debug.Log($"[MaskMgr] 消耗灵能 {cost}，剩余 {playerInfo.nowPsychicPowerValue}");
+        }
 
-
-        UIMgr.Instance.GetPanel<GamePanel>((gamePanel) =>
+        // 显示隐藏层UI
+        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
         {
-            gamePanel.ShowRenderTextureUI(3000);
+            panel.ShowRenderTextureUI(duration);
         });
-        ////将隐藏层显示出来
-        //Camera.main.cullingMask |= (1 << LayerMask.NameToLayer("HidenLayer"));
-        ////持续时间结束后将隐藏层重新隐藏
-        //TimerMgr.Instance.CreateTimer(false, maskInfo.durationInMilliseconds, () =>
-        //{
-        //    Camera.main.cullingMask &= ~(1 << LayerMask.NameToLayer("HidenLayer"));
-        //});
     }
 
     /// <summary>
-    /// 震慑面具事件 驱散范围内的幽灵
+    /// 镇邪面具效果：驱散幽灵
     /// </summary>
-    public void MaskEventSubdueEvilGhost()
+    private void EffectSubdueEvil()
     {
-        // 若处于异常事件，只用于解除异常
+        // 若处于异常事件，解除异常
         if (EventMgr.Instance.IsInUnnormalState)
         {
             EventMgr.Instance.ResolveUnnormalBySubdueMask();
             return;
         }
 
-        //播放鬼魂出现音效
+        // 播放音效
         MusicMgr.Instance.PlaySound("Music/26GGJsound/ghost_disappear", false);
-
-        //驱散选中的幽灵
-
     }
 
     /// <summary>
-    /// 根据按键切换面具
+    /// 设置当前面具并更新UI
     /// </summary>
-    /// <param name="keycode">监听的按键</param>
-    public void MaskSwitching(KeyCode keycode)
+    private void SetCurrentMask(int maskID)
     {
-        if (!canSwitchMask || GameDataMgr.Instance.PlayerInfo.gotMaskIDList == null)
-            return;
-
-        switch (keycode)
-        {
-            case KeyCode.Alpha1:
-                ReallyMaskSwitching(1);
-                break;
-            case KeyCode.Alpha2:
-                ReallyMaskSwitching(2);
-                break;
-            case KeyCode.Alpha3:
-                ReallyMaskSwitching(3);
-                break;
-            default:
-                break;
-        }
+        GameDataMgr.Instance.PlayerInfo.nowMaskID = maskID;
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_UpdateMaskUI, maskID);
     }
 
     /// <summary>
-    /// 实际进行面具切换的逻辑处理
+    /// 根据ID获取面具配置
     /// </summary>
-    /// <param name="maskID"></param>
-    private void ReallyMaskSwitching(int maskID)
+    private MaskInfo GetMaskInfoById(int maskID)
     {
-        int maskChangedID = GameDataMgr.Instance.PlayerInfo.gotMaskIDList.Find(x => x == maskID);
-        if (maskChangedID == 0)
-        {
-            //没有该面具的逻辑处理
+        var list = GameDataMgr.Instance.MaskInfoList;
+        if (list == null || list.Count == 0)
+            return null;
+        return list.Find(m => m.maskID == maskID);
+    }
 
-            return;
-        }
-        //有该面具则进行切换
-        //改变角色当前面具id
-        GameDataMgr.Instance.PlayerInfo.nowMaskID = maskChangedID;
-        //触发面具UI更新事件
-        EventCenter.Instance.EventTrigger<int>(E_EventType.E_UpdateMaskUI, maskChangedID);
-        //进入切换冷却
-        canSwitchMask = false;
-        //冷却时间结束后允许切换面具
-        TimerMgr.Instance.CreateTimer(false, 3000, () =>
+    /// <summary>
+    /// 开始面具冷却
+    /// </summary>
+    private void StartMaskCooldown(MaskInfo maskInfo)
+    {
+        maskInfo.canUseInElevator = false;
+
+        int cooldown = (maskInfo.cooldownInMilliseconds > 0)
+            ? maskInfo.cooldownInMilliseconds
+            : 5000;
+
+        Debug.Log($"[MaskMgr] 面具 {maskInfo.maskID} 进入冷却 {cooldown}ms");
+
+        TimerMgr.Instance.CreateTimer(false, cooldown, () =>
         {
-            canSwitchMask = true;
+            maskInfo.canUseInElevator = true;
+            Debug.Log($"[MaskMgr] 面具 {maskInfo.maskID} 冷却结束");
         });
     }
 
-    public void Stop()
-    {
-        //移除面具切换监听
-        EventCenter.Instance.RemoveEventListener<KeyCode>(E_EventType.E_ItemChangeMask1, MaskSwitching);
-        EventCenter.Instance.RemoveEventListener<KeyCode>(E_EventType.E_ItemChangeMask2, MaskSwitching);
-        EventCenter.Instance.RemoveEventListener<KeyCode>(E_EventType.E_ItemChangeMask3, MaskSwitching);
-    }
-    private MaskMgr() { }
+    // 保留空方法兼容旧代码
+    public void Start() { }
+    public void Stop() { }
 }

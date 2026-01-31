@@ -4,48 +4,68 @@ using UnityEngine;
 
 public class InGame : MonoBehaviour
 {
-    // Start is called before the first frame update
     void Start()
     {
-        //#region TestCode
-        ////此处仅为测试使用 测试完成后请删除
-        //UIMgr.Instance.ShowPanel<GamePanel>();
-        //ResMgr.Instance.LoadAsync<GameObject>("ResourcesMgr/ResourcesMgr", (obj) =>
-        //{
-        //    GameObject resourcesMgrObj = GameObject.Instantiate(obj);
-        //    ResourcesMgr resources = resourcesMgrObj.GetComponent<ResourcesMgr>();
-        //    if (resources == null)
-        //        resources = resourcesMgrObj.AddComponent<ResourcesMgr>();
-        //});
-        //ResMgr.Instance.LoadAsync<GameObject>("Prefab/Ghost/1", (obj) => 
-        //{
-        //    GameObject passengerObj = GameObject.Instantiate(obj,new Vector3(0,0,0),Quaternion.identity);
-        //    Passenger passenger = passengerObj.GetComponent<Passenger>();
-        //    if (passenger == null)
-        //        passenger = passengerObj.AddComponent<Passenger>();
-        //});
-        //ResMgr.Instance.LoadAsync<GameObject>("Prefab/Player/Player", (obj) =>
-        //{
-        //    GameObject playerObj = GameObject.Instantiate(obj, new Vector3(0, 0, 0), Quaternion.identity);
-        //    Player player = playerObj.GetComponent<Player>();
-        //    if (player == null)
-        //        player = playerObj.AddComponent<Player>();
-        //    player.Init(GameDataMgr.Instance.PlayerInfo);
-        //});
-
-        //#endregion
-        // UIMgr.Instance.ShowPanel<LoginPanel>();
         UIMgr.Instance.ShowPanel<UIBackgroundPanel>(E_UILayer.Bottom);
         UIMgr.Instance.ShowPanel<GamePanel>();
+
+        // 启动电梯
+        ElevatorMgr.Instance.StartElevator();
+
+        // 初始化玩家面具数据
+        InitPlayerMaskData();
+
+        Debug.Log("[InGame] 游戏初始化完成");
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// 初始化玩家面具数据（确保有面具可用）
+    /// </summary>
+    private void InitPlayerMaskData()
+    {
+        var playerInfo = GameDataMgr.Instance.PlayerInfo;
+        if (playerInfo == null)
+        {
+            Debug.LogError("[InGame] PlayerInfo 为空！");
+            return;
+        }
+
+        // 确保面具列表存在
+        if (playerInfo.gotMaskIDList == null)
+            playerInfo.gotMaskIDList = new List<int>();
+
+        // 添加默认面具 1, 2, 3
+        if (!playerInfo.gotMaskIDList.Contains(1))
+            playerInfo.gotMaskIDList.Add(1);
+        if (!playerInfo.gotMaskIDList.Contains(2))
+            playerInfo.gotMaskIDList.Add(2);
+        if (!playerInfo.gotMaskIDList.Contains(3))
+            playerInfo.gotMaskIDList.Add(3);
+
+        // 默认装备普通面具
+        if (playerInfo.nowMaskID == 0)
+            playerInfo.nowMaskID = 1;
+
+        // 确保所有面具可用状态
+        var maskList = GameDataMgr.Instance.MaskInfoList;
+        if (maskList != null)
+        {
+            foreach (var mask in maskList)
+            {
+                if (mask != null)
+                    mask.canUseInElevator = true;
+            }
+        }
+
+        Debug.Log($"[InGame] 玩家面具列表: [{string.Join(",", playerInfo.gotMaskIDList)}]");
+    }
+
     void Update()
     {
-        //if (Input.GetKeyDown(KeyCode.V))
-        //{
-        //    ElevatorMgr.Instance.StartElevator();
-        //}
+        // 直接在这里检测面具按键输入（最可靠）
+        DetectMaskInput();
+
+        // 其他测试按键
         if (Input.GetKeyDown(KeyCode.S))
         {
             UIMgr.Instance.GetPanel<GamePanel>((gamePanel) =>
@@ -59,6 +79,32 @@ public class InGame : MonoBehaviour
             {
                 gamePanel.HideMirrorUI();
             });
+        }
+    }
+
+    /// <summary>
+    /// 检测面具切换按键
+    /// </summary>
+    private void DetectMaskInput()
+    {
+        // 检查电梯状态
+        if (!ElevatorMgr.Instance.CanUseMask)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            Debug.Log("[InGame] 按下按键 1");
+            MaskMgr.Instance.TryUseMask(1);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            Debug.Log("[InGame] 按下按键 2");
+            MaskMgr.Instance.TryUseMask(2);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            Debug.Log("[InGame] 按下按键 3");
+            MaskMgr.Instance.TryUseMask(3);
         }
     }
 }

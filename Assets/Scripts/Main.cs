@@ -8,11 +8,9 @@ public class Main : MonoBehaviour
     {
         UIMgr.Instance.ShowPanel<LoginPanel>(E_UILayer.Middle, (BasePanel) =>
         {
-            ResMgr.Instance.LoadAsync<GameObject>("ResourcesMgr/ResourcesMgr", (obj) =>
-            {
-                GameObject resMgrObj = Instantiate(obj);
-                DontDestroyOnLoad(resMgrObj);
-            });
+            GameObject go = ResMgr.Instance.Load<GameObject>("ResourcesMgr/ResourcesMgr");
+            GameObject reallyObj = Instantiate(go);
+            DontDestroyOnLoad(reallyObj);
         });
     }
     // Start is called before the first frame update

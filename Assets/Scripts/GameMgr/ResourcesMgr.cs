@@ -10,16 +10,16 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
 {
     [Header("LevelInfo")]
     [Tooltip("存储1-18层每一层的具体关卡信息")]
-    public List<LevelDetailSO> levelDetailSOList = new List<LevelDetailSO>();
+    public List<LevelDetailSO> levelDetailSOList;
     [Header("PassengerInfo")]
     [Tooltip("存储通用的乘客预设体")]
     public GameObject passengerPrefab;
     [Tooltip("存储所有的乘客的具体信息")]
-    public List<PassengerSO> passengerSOList = new List<PassengerSO>();
+    public List<PassengerSO> passengerSOList;
     /// <summary>
     /// 波数详情的ScriptableObject列表
     /// </summary>
-    public List<WaveDetailSO> waveSOList = new List<WaveDetailSO>();
+    public List<WaveDetailSO> waveSOList;
     /// <summary>
     /// 乘客的信任值
     /// </summary>
@@ -87,4 +87,5 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
         if (passengerTrustValue <= 0)
             EventMgr.Instance.FallIntoAbyss();
     }
+
 }

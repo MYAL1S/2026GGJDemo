@@ -1,5 +1,5 @@
 [
-{"maskID":1,"maskName":"普通面具","psychicPowerValue":0,"durationInMilliseconds":0,"cooldownInMilliseconds":0,"canUseInElevator":true,"maskDescription":"想不出来随便写了…","maskResPath":"Sprites/Mask1"},
-{"maskID":2,"maskName":"破妄面具","psychicPowerValue":20,"durationInMilliseconds":3000,"cooldownInMilliseconds":5000,"canUseInElevator":true,"maskDescription":"想不出来随便写了...","maskResPath":"Sprites/Mask2"},
-{"maskID":3,"maskName":"镇邪面具","psychicPowerValue":50,"durationInMilliseconds":5000,"cooldownInMilliseconds":10000,"canUseInElevator":true,"maskDescription":"想不出来随便写了…","maskResPath":"Sprites/Mask3"}
+{"maskID":1,"maskName":"普通面具","psychicPowerValue":0,"durationInMilliseconds":1000,"cooldownInMilliseconds":0,"canUseInElevator":true,"maskDescription":"想不出来随便写了…","maskResPath":"Sprites/Mask1"},
+{"maskID":2,"maskName":"破妄面具","psychicPowerValue":1,"durationInMilliseconds":3000,"cooldownInMilliseconds":5000,"canUseInElevator":true,"maskDescription":"想不出来随便写了...","maskResPath":"Sprites/Mask2"},
+{"maskID":3,"maskName":"镇邪面具","psychicPowerValue":1,"durationInMilliseconds":5000,"cooldownInMilliseconds":10000,"canUseInElevator":true,"maskDescription":"想不出来随便写了…","maskResPath":"Sprites/Mask3"}
 ]

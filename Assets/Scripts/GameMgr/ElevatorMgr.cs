@@ -33,6 +33,19 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     private bool pendingMirrorEvent; // 本次停靠是否应触发铜镜（由 wave 配置决定）
 
     /// <summary>
+    /// 运行中可用面具；停靠中禁用
+    /// </summary>
+    public bool CanUseMask =>
+        currentElevatorState == E_ElevatorState.Moving ||
+        currentElevatorState == E_ElevatorState.Arriving ||
+        currentElevatorState == E_ElevatorState.Departing;
+
+    /// <summary>
+    /// 停靠时允许与乘客交互；运行时禁用
+    /// </summary>
+    public bool CanInteractPassengers => currentElevatorState == E_ElevatorState.Stopped;
+
+    /// <summary>
     /// 开启电梯的方法 进入游戏时调用
     /// </summary>
     public void StartElevator()
@@ -52,7 +65,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState = E_ElevatorState.Moving;
         Debug.Log("电梯正在运行...");
 
-        TimerMgr.Instance.CreateTimer(false, Random.Range(3, 5) * 1000, () =>
+        TimerMgr.Instance.CreateTimer(false, Random.Range(5, 10) * 1000, () =>
         {
             // 随机异常
             bool triggerAbnormal = Random.value < 0.2f;

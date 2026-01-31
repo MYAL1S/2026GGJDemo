@@ -221,6 +221,10 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// </summary>
     private void OnUpdate()
     {
+        // 停靠状态才允许点击乘客
+        if (!ElevatorMgr.Instance.CanInteractPassengers)
+            return;
+
         if (Input.GetMouseButtonDown(0))
         {
             MathUtil.RayCast2D<Passenger>(Camera.main.ScreenPointToRay(Input.mousePosition), (passenger) => {

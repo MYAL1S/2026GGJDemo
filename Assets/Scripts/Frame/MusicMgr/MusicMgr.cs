@@ -43,19 +43,27 @@ public class MusicMgr : BaseSingleton<MusicMgr>
     }
 
     /// <summary>
-    /// 自动删除播放完毕的音效组件
+    /// 自动删除播放完毕或已被销毁的音效组件
     /// </summary>
     public void AutoDestroySound()
     {
         if (!isPlaying)
             return;
 
-        for (int i = soundList.Count -1; i >= 0; i--)
+        for (int i = soundList.Count - 1; i >= 0; i--)
         {
-            if (!soundList[i].isPlaying)
+            var src = soundList[i];
+            // 已被销毁的 AudioSource（场景切换或对象池被清理）
+            if (src == null || src.Equals(null))
             {
-                soundList[i].clip = null;
-                PoolMgr.Instance.PushObj(soundList[i].gameObject);
+                soundList.RemoveAt(i);
+                continue;
+            }
+
+            if (!src.isPlaying)
+            {
+                src.clip = null;
+                PoolMgr.Instance.PushObj(src.gameObject);
                 soundList.RemoveAt(i);
             }
         }
@@ -153,6 +161,9 @@ public class MusicMgr : BaseSingleton<MusicMgr>
     /// </summary>
     public void StopSound(AudioSource audioSource)
     {
+        if (audioSource == null || audioSource.Equals(null))
+            return;
+
         if (soundList.Contains(audioSource))
         {
             audioSource.Stop();

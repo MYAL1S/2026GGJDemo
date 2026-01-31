@@ -9,36 +9,13 @@ using UnityEngine.UI;
 public class GamePanel : BasePanel
 {
     private Text txtMask;
-    /// <summary>
-    /// 镜子图片
-    /// </summary>
     private RawImage imgMirror;
-    /// <summary>
-    /// 镜子对象
-    /// </summary>
     private Transform mirrorObj;
-    /// <summary>
-    /// 渲染隐藏层的RawImage
-    /// </summary>
     private RawImage randerTexture;
-    /// <summary>
-    /// 渲染隐藏层的RenderTexture对象
-    /// </summary>
     private Transform renderTextureObj;
-    /// <summary>
-    /// 乘客交互面板的RawImage
-    /// </summary>
     private RawImage passengerPanel;
-    /// <summary>
-    /// 乘客交互面板对象
-    /// </summary>
     private Transform passengerPanelObj;
-    /// <summary>
-    /// 当前选中的乘客
-    /// </summary>
     private Passenger nowSelectedPassenger;
-
-
 
     public override void Init()
     {
@@ -50,15 +27,89 @@ public class GamePanel : BasePanel
         renderTextureObj = randerTexture.GetComponent<Transform>();
         passengerPanel = GetControl<RawImage>("PassengerPanel");
         passengerPanelObj = passengerPanel.GetComponent<Transform>();
-        //开启面具系统
-        MaskMgr.Instance.Start();
-        //注册更新面具UI事件
+
+        // 注册事件
         EventCenter.Instance.AddEventListener<int>(E_EventType.E_UpdateMaskUI, UpdateMaskUI);
-        //注册更新与面具相关的UI事件
         EventCenter.Instance.AddEventListener(E_EventType.E_MirrorUIUpdate, UpdateMirrorUI);
-        //注册显示乘客交互面板UI事件
         EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerUIAppear, ShowPassengerPanelUI);
+
         HideMirrorUI();
+
+        // 初始化玩家面具数据
+        InitPlayerMaskData();
+
+        // 注册按键检测到 MonoMgr
+        MonoMgr.Instance.AddUpdateListener(DetectMaskInput);
+
+        Debug.Log("[GamePanel] 初始化完成");
+    }
+
+    /// <summary>
+    /// 初始化玩家面具数据
+    /// </summary>
+    private void InitPlayerMaskData()
+    {
+        var playerInfo = GameDataMgr.Instance.PlayerInfo;
+        if (playerInfo == null)
+        {
+            Debug.LogError("[GamePanel] PlayerInfo 为空");
+            return;
+        }
+
+        // 确保面具列表存在
+        if (playerInfo.gotMaskIDList == null)
+            playerInfo.gotMaskIDList = new List<int>();
+
+        // 添加默认面具 1, 2, 3
+        if (!playerInfo.gotMaskIDList.Contains(1))
+            playerInfo.gotMaskIDList.Add(1);
+        if (!playerInfo.gotMaskIDList.Contains(2))
+            playerInfo.gotMaskIDList.Add(2);
+        if (!playerInfo.gotMaskIDList.Contains(3))
+            playerInfo.gotMaskIDList.Add(3);
+
+        // 默认装备普通面具
+        if (playerInfo.nowMaskID == 0)
+            playerInfo.nowMaskID = 1;
+
+        // 确保所有面具可用
+        var maskList = GameDataMgr.Instance.MaskInfoList;
+        if (maskList != null)
+        {
+            foreach (var mask in maskList)
+            {
+                if (mask != null)
+                    mask.canUseInElevator = true;
+            }
+        }
+
+        Debug.Log($"[GamePanel] 玩家面具: [{string.Join(",", playerInfo.gotMaskIDList)}]");
+    }
+
+    /// <summary>
+    /// 检测面具切换按键（每帧调用）
+    /// </summary>
+    private void DetectMaskInput()
+    {
+        // 电梯不可用时不检测
+        if (!ElevatorMgr.Instance.CanUseMask)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            Debug.Log("[GamePanel] 按下按键 1");
+            MaskMgr.Instance.TryUseMask(1);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            Debug.Log("[GamePanel] 按下按键 2");
+            MaskMgr.Instance.TryUseMask(2);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            Debug.Log("[GamePanel] 按下按键 3");
+            MaskMgr.Instance.TryUseMask(3);
+        }
     }
 
     /// <summary>
@@ -71,7 +122,8 @@ public class GamePanel : BasePanel
         switch (name)
         {
             case "BtnMask":
-                MaskMgr.Instance.MaskEventHandler(GameDataMgr.Instance.PlayerInfo.nowMaskID);
+                // 点击按钮使用当前面具
+                MaskMgr.Instance.TryUseMask(GameDataMgr.Instance.PlayerInfo.nowMaskID);
                 break;
             case "BtnGaze":
                 //触发观看铜镜事件
@@ -117,6 +169,7 @@ public class GamePanel : BasePanel
                 txtMask.text = "镇邪面具";
                 break;
         }
+        Debug.Log($"[GamePanel] 面具UI更新: {txtMask.text}");
     }
 
     /// <summary>
@@ -141,7 +194,7 @@ public class GamePanel : BasePanel
     public void ShowRenderTextureUI(int time)
     {
         renderTextureObj.gameObject.SetActive(true);
-        TimerMgr.Instance.CreateTimer(false, time, () => 
+        TimerMgr.Instance.CreateTimer(false, time, () =>
         {
             HideRenderTextureUI();
         });
@@ -191,5 +244,14 @@ public class GamePanel : BasePanel
     private void UpdateMirrorUI()
     {
         print("更新镜子UI");
+    }
+
+    /// <summary>
+    /// 面板隐藏时移除按键检测
+    /// </summary>
+    public override void HideMe()
+    {
+        base.HideMe();
+        MonoMgr.Instance.RemoveUpdateListener(DetectMaskInput);
     }
 }

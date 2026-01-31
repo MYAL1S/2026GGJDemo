@@ -227,7 +227,7 @@ public class InputMgr : BaseSingleton<InputMgr>
                 switch (nowInputInfo.status)
                 {
                     case InputStatus.Press:
-                        if (Input.GetMouseButton(nowInputInfo.mouseID))
+                        if (Input.GetKey(nowInputInfo.keyCode))
                             TriggerKeyboardEvent(events, nowInputInfo.keyCode);
                         break;
                     case InputStatus.Down:

@@ -182,7 +182,19 @@ public class PoolMgr : BaseSingleton<PoolMgr>
     private GameObject pool;
     private PoolMgr()
     {
-        pool = new GameObject("Pool");
+        EnsurePoolRoot();
+    }
+
+    /// <summary>
+    /// 确保池根节点存在且未被销毁
+    /// </summary>
+    private void EnsurePoolRoot()
+    {
+        if (pool == null || pool.Equals(null))
+        {
+            pool = new GameObject("Pool");
+            GameObject.DontDestroyOnLoad(pool);
+        }
     }
 
     /// <summary>
@@ -192,6 +204,7 @@ public class PoolMgr : BaseSingleton<PoolMgr>
     /// <returns></returns>
     public GameObject GetObj(string name)
     {
+        EnsurePoolRoot();
         GameObject obj;
 
         #region 未添加对象上限
@@ -239,10 +252,12 @@ public class PoolMgr : BaseSingleton<PoolMgr>
     /// <param name="obj">放回对象池的对象</param>
     public void PushObj(GameObject obj)
     {
-        if (pool == null)
-            pool = new GameObject("Pool");
+        EnsurePoolRoot();
 
-        poolDic[obj.name].Push(obj);
+        if (!poolDic.ContainsKey(obj.name))
+            poolDic.Add(obj.name, new PoolData(obj.name, pool, obj));
+        else
+            poolDic[obj.name].Push(obj);
 
         #region 未加入对象上限时的逻辑
         ////如果对象池中没有该对象的缓存(抽屉)，则创建一个新的缓存(抽屉)
@@ -315,6 +330,10 @@ public class PoolMgr : BaseSingleton<PoolMgr>
     {
         poolDic.Clear();
         referencePoolDic.Clear();
+        if (pool != null && !pool.Equals(null))
+        {
+            GameObject.Destroy(pool);
+        }
         pool = null;
     }
 }

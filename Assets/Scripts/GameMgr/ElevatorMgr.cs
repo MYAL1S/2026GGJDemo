@@ -37,6 +37,10 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     /// </summary>
     public void StartElevator()
     {
+        //开启电梯音效
+        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience");
+        // 监听 FixedUpdate 以便实时检测灵能值
+        MonoMgr.Instance.AddFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
         EnterMovingState();
     }
 
@@ -66,32 +70,37 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     {
         currentElevatorState = E_ElevatorState.Arriving;
 
-        // 选波
-        currentWave = ResourcesMgr.Instance.waveSOList[waveNum];
-        if (levelNum >= currentWave.levelDetails.Count)
+        TimerMgr.Instance.CreateTimer(false, 3000, () =>
         {
-            levelNum = 0;
-            waveNum = Random.Range(0, ResourcesMgr.Instance.waveSOList.Count);
+            //播放电梯抵达音效
+            MusicMgr.Instance.PlaySound("Music/26GGJsound/elevator_beep",false);
+
+            // 选波
             currentWave = ResourcesMgr.Instance.waveSOList[waveNum];
-        }
+            if (levelNum >= currentWave.levelDetails.Count)
+            {
+                levelNum = 0;
+                waveNum = Random.Range(0, ResourcesMgr.Instance.waveSOList.Count);
+                currentWave = ResourcesMgr.Instance.waveSOList[waveNum];
+            }
 
-        // 选层
-        currentLevelIndex = levelNum;
-        currentLevelDetail = currentWave.levelDetails[currentLevelIndex];
-        GameLevelMgr.Instance.currentLevelDetail = currentLevelDetail; // 更新全局当前关卡
-        levelNum++; // 准备下次
+            // 选层
+            currentLevelIndex = levelNum;
+            currentLevelDetail = currentWave.levelDetails[currentLevelIndex];
+            GameLevelMgr.Instance.currentLevelDetail = currentLevelDetail; // 更新全局当前关卡
+            levelNum++; // 准备下次
 
-        // 本层是否配置了铜镜事件（基于 wave 的索引列表）
-        pendingMirrorEvent = currentWave.createMirrorLevelIndex != null &&
-                             currentWave.createMirrorLevelIndex.Contains(currentLevelIndex);
+            // 本层是否配置了铜镜事件（基于 wave 的索引列表）
+            pendingMirrorEvent = currentWave.createMirrorLevelIndex != null &&
+                                 currentWave.createMirrorLevelIndex.Contains(currentLevelIndex);
 
-        // 改变楼层 UI 显示
-        ChangeLevelUI(currentLevelDetail.level);
-
-        // 播放开门动画（假设1秒）
-        TimerMgr.Instance.CreateTimer(false, 1000, () =>
-        {
+            // 改变楼层 UI 显示
+            ChangeLevelUI(currentLevelDetail.level);
             EnterStoppedState();
+        },400,
+        () =>
+        {
+            ChangeLevelUI(Random.Range(2,18));
         });
     }
 
@@ -102,6 +111,9 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     public void EnterStoppedState()
     {
         currentElevatorState = E_ElevatorState.Stopped;
+
+        //0. 停止电梯音效
+        MusicMgr.Instance.PlaySound("Music/26GGJsound/elevator_dooropen", false);
 
         // 1. 生成乘客
         PassengerMgr.Instance.SpawnWave();
@@ -122,9 +134,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         TimerMgr.Instance.CreateTimer(false, GameLevelMgr.Instance.currentLevelDetail.dockingTime * 1000, () =>
         {
             EnterDepartingState();
-        }, 100, () =>
-        {
-            Debug.Log("电梯停靠中，玩家操作时间...");
         });
     }
 
@@ -134,6 +143,9 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     public void EnterDepartingState()
     {
         currentElevatorState = E_ElevatorState.Departing;
+
+        //播放电梯关门音效
+        MusicMgr.Instance.PlaySound("Music/26GGJsound/elevator_doorclose", false);
 
         TimerMgr.Instance.CreateTimer(false, 1000, () =>
         {

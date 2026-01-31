@@ -7,15 +7,37 @@ using UnityEngine;
 /// </summary>
 public class EventMgr : BaseSingleton<EventMgr>
 {
+    /// <summary>
+    /// 观看铜镜的定时器
+    /// </summary>
     private int timerID;
     private Coroutine fogCoroutine;
+    /// <summary>
+    /// 雾气面板
+    /// </summary>
     private FogPanel fogPanel;
+    /// <summary>
+    /// 异常倒计时
+    /// </summary>
+    private int abnormalTimerId;
+    /// <summary>
+    /// 是否处于异常状态
+    /// </summary>
+    private bool isUnnormalState;
+    public bool IsInUnnormalState => isUnnormalState;  // 新增只读访问
 
     /// <summary>
-    /// 开始观看铜镜
+    /// 开始观看铜镜（受镜像次数配额限制）
     /// </summary>
     public void StartWatchMirror()
     {
+        // 配额检查：超出则直接返回
+        if (!GameLevelMgr.Instance.TryConsumeMirrorOccurence())
+        {
+            Debug.Log("镜像次数已达上限");
+            return;
+        }
+
         // 若已有定时器，先清理
         if (timerID != 0)
         {
@@ -42,10 +64,12 @@ public class EventMgr : BaseSingleton<EventMgr>
         // 触发鬼魂靠近事件
         PassengerMgr.Instance.GhostApproaching();
 
-        // 显示雾气面板（缓慢淡入）
+        // 显示雾气面板（缓慢淡入），如无 CanvasGroup 则补一个
         UIMgr.Instance.ShowPanel<FogPanel>(E_UILayer.Top, panel =>
         {
             fogPanel = panel;
+            var cg = fogPanel.GetComponent<CanvasGroup>();
+            if (cg == null) cg = fogPanel.gameObject.AddComponent<CanvasGroup>();
             StartFogFade(0f, 1f, 1.5f, hideAfterFade: false);
         });
     }
@@ -63,16 +87,14 @@ public class EventMgr : BaseSingleton<EventMgr>
         }
 
         // 鬼魂停止靠近
-         PassengerMgr.Instance.StopGhostApproaching(); 
+        PassengerMgr.Instance.StopGhostApproaching();
 
         // 雾气缓慢淡出并隐藏面板
-        StartFogFade( fogPanel != null ? fogPanel.GetComponent<CanvasGroup>()?.alpha ?? 1f : 1f,
-                      0f, 1.0f, hideAfterFade: true);
+        StartFogFade(fogPanel != null ? fogPanel.GetComponent<CanvasGroup>()?.alpha ?? 1f : 1f,
+                     0f, 1.0f, hideAfterFade: true);
     }
 
-    /// <summary>
-    /// 控制雾气淡入淡出
-    /// </summary>
+    /// <summary>控制雾气淡入淡出</summary>
     private void StartFogFade(float from, float to, float duration, bool hideAfterFade)
     {
         if (fogCoroutine != null)
@@ -81,14 +103,6 @@ public class EventMgr : BaseSingleton<EventMgr>
         fogCoroutine = MonoMgr.Instance.StartCoroutine(FogFadeRoutine(from, to, duration, hideAfterFade));
     }
 
-    /// <summary>
-    /// 控制雾气淡入淡出协程
-    /// </summary>
-    /// <param name="from"></param>
-    /// <param name="to"></param>
-    /// <param name="duration"></param>
-    /// <param name="hideAfterFade"></param>
-    /// <returns></returns>
     private IEnumerator FogFadeRoutine(float from, float to, float duration, bool hideAfterFade)
     {
         if (fogPanel == null)
@@ -115,6 +129,48 @@ public class EventMgr : BaseSingleton<EventMgr>
             fogPanel = null;
         }
         fogCoroutine = null;
+    }
+
+    /// <summary>
+    /// 异常事件触发
+    /// </summary>
+    public void UnnormalEvent()
+    {
+        // 楼层显示异常
+        ElevatorMgr.Instance.ChangeLevelUI(-18);
+
+        isUnnormalState = true;
+
+        // 3 秒后未解除则坠入异界
+        abnormalTimerId = TimerMgr.Instance.CreateTimer(false, 3000, () =>
+        {
+            if (!isUnnormalState) return;
+            FallIntoAbyss();
+        });
+    }
+
+    /// <summary>
+    /// 使用镇邪面具解除异常
+    /// </summary>
+    public void ResolveUnnormalBySubdueMask()
+    {
+        if (!isUnnormalState)
+            return;
+
+        isUnnormalState = false;
+
+        if (abnormalTimerId != 0)
+        {
+            TimerMgr.Instance.RemoveTimer(abnormalTimerId);
+            abnormalTimerId = 0;
+        }
+        // 可在此恢复楼层显示等处理
+    }
+
+    private void FallIntoAbyss()
+    {
+        Debug.Log("电梯坠入异界，游戏结束");
+        // TODO: 结束流程/结算
     }
 
     private EventMgr() { }

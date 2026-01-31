@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -50,13 +51,16 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState = E_ElevatorState.Moving;
         Debug.Log("电梯正在运行...");
 
-        TimerMgr.Instance.CreateTimer(false, Random.Range(30, 50) * 1000, () => 
+        TimerMgr.Instance.CreateTimer(false, Random.Range(30, 50) * 1000, () =>
         {
+            //随机确定该层是否触发异常事件
+            //如果触发异常事件则进入异常事件逻辑
+            // 随机确定该层是否触发异常事件
+            bool triggerAbnormal = Random.value < 0.2f; // 20% 概率，可按需调整
+            if (triggerAbnormal)
+                EventMgr.Instance.UnnormalEvent();
+            //结束异常事件或者未触发异常事件进入到达状态
             EnterArrivingState();
-        }, 100, () => 
-        {
-            //改变楼层显示
-            txtFloor.text = Random.Range(2, 18).ToString();
         });
     }
 
@@ -71,7 +75,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         if (levelNum >= wave.levelDetails.Count)
         {
             levelNum = 0; // 重置到当前 wave 的第一个 level
-            waveNum++; // 切换到下一个 wave
+            waveNum = Random.Range(0,ResourcesMgr.Instance.waveSOList.Count); // 切换到下一个 wave
             wave = ResourcesMgr.Instance.waveSOList[waveNum];
         }
 
@@ -80,9 +84,11 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         levelNum++; // 准备下次调用时切换到下一个 level
 
         // 改变楼层 UI 显示
-        txtFloor.text = stopFloor.ToString();
+
+        ChangeLevelUI(stopFloor);
 
         // 播放开门动画
+
 
         // 等待开门动画播放完（假设动画1秒）
         TimerMgr.Instance.CreateTimer(false, 1000, () =>
@@ -144,6 +150,16 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         });
 
 
+
+    }
+
+    /// <summary>
+    /// 改变楼层的UI显示
+    /// </summary>
+    /// <param name="level"></param>
+    public void ChangeLevelUI(int level)
+    {
+        //根据当前楼层具体改变ui显示
 
     }
 

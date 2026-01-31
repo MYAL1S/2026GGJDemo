@@ -71,6 +71,21 @@ public class GamePanel : BasePanel
     }
 
     /// <summary>
+    /// 显示与面具相关的UI
+    /// </summary>
+    public void ShowMirrorUI()
+    {
+
+    }
+
+    /// <summary>
+    /// 隐藏面具相关的UI
+    /// </summary>
+    public void HideMirrorUI()
+    {
+    }
+
+    /// <summary>
     /// 更新与面具相关的UI显示
     /// </summary>
     private void UpdateMirrorUI()

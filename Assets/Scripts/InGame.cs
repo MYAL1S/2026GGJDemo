@@ -46,5 +46,19 @@ public class InGame : MonoBehaviour
         //{
         //    ElevatorMgr.Instance.StartElevator();
         //}
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            UIMgr.Instance.GetPanel<GamePanel>((gamePanel) =>
+            {
+                gamePanel.ShowMirrorUI();
+            });
+        }
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            UIMgr.Instance.GetPanel<GamePanel>((gamePanel) =>
+            {
+                gamePanel.HideMirrorUI();
+            });
+        }
     }
 }

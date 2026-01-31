@@ -9,15 +9,27 @@ using UnityEngine.UI;
 public class GamePanel : BasePanel
 {
     private Text txtMask;
-
+    /// <summary>
+    /// 镜子图片
+    /// </summary>
+    private RawImage imgMirror;
+    /// <summary>
+    /// 镜子对象
+    /// </summary>
+    private Transform mirrorObj;
     public override void Init()
     {
         base.Init();
         txtMask = GetControl<Text>("TxtMask");
+        imgMirror = GetControl<RawImage>("Mirror");
+        mirrorObj = imgMirror.GetComponent<Transform>();
         //开启面具系统
         MaskMgr.Instance.Start();
         //注册更新面具UI事件
         EventCenter.Instance.AddEventListener<int>(E_EventType.E_UpdateMaskUI, UpdateMaskUI);
+        //注册更新与面具相关的UI事件
+        EventCenter.Instance.AddEventListener(E_EventType.E_MirrorUIUpdate, UpdateMirrorUI);
+        HideMirrorUI();
     }
 
     /// <summary>
@@ -31,6 +43,14 @@ public class GamePanel : BasePanel
         {
             case "BtnMask":
                 MaskMgr.Instance.MaskEventHandler(GameDataMgr.Instance.PlayerInfo.nowMaskID);
+                break;
+            case "BtnWatch":
+                //触发观看铜镜事件
+                EventMgr.Instance.StartWatchMirror();
+                break;
+            case "BtnCancel":
+                //取消观看铜镜事件
+                EventMgr.Instance.StopWatchMirror();
                 break;
             default:
                 break;
@@ -58,5 +78,29 @@ public class GamePanel : BasePanel
                 txtMask.text = "镇邪面具";
                 break;
         }
+    }
+
+    /// <summary>
+    /// 显示与面具相关的UI
+    /// </summary>
+    public void ShowMirrorUI()
+    {
+        mirrorObj.gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// 隐藏面具相关的UI
+    /// </summary>
+    public void HideMirrorUI()
+    {
+        mirrorObj.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 更新与面具相关的UI显示
+    /// </summary>
+    private void UpdateMirrorUI()
+    {
+        
     }
 }

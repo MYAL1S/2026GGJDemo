@@ -54,8 +54,11 @@ public enum E_EventType
     /// </summary>
     E_UpdateMaskUI,
     /// <summary>
-    /// 
+    /// 乘客点击事件-参数：Passenger对象
     /// </summary>
-    E_PassengerClicked
-
+    E_PassengerClicked,
+    /// <summary>
+    /// 面具镜面UI更新事件-参数：无
+    /// </summary>
+    E_MirrorUIUpdate,
 }

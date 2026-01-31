@@ -19,6 +19,11 @@ public class PhoneItem : DraggableItem
     private GameObject renderTextureRoot;
 
     /// <summary>
+    /// 灵能消耗值
+    /// </summary>
+    private int psychicCost = 1;
+
+    /// <summary>
     /// 设置渲染隐藏层根对象的引用
     /// </summary>
     public void SetRenderTextureRoot(GameObject root)
@@ -33,38 +38,33 @@ public class PhoneItem : DraggableItem
     {
         itemConfig = config;
         if (itemConfig != null)
+        {
             maxDragTime = itemConfig.phoneMaxDragTime;
+            psychicCost = itemConfig.phonePsychicCost;
+        }
     }
 
     protected override void Awake()
     {
         base.Awake();
-        // 从配置读取参数
         if (itemConfig != null)
+        {
             maxDragTime = itemConfig.phoneMaxDragTime;
+            psychicCost = itemConfig.phonePsychicCost;
+        }
     }
 
     protected override void OnDragStart()
     {
-        int cost = itemConfig != null ? itemConfig.phonePsychicCost : 1;
-
-        var playerInfo = GameDataMgr.Instance.PlayerInfo;
-        if (playerInfo == null)
-        {
-            Debug.LogError("[PhoneItem] PlayerInfo 为空");
-            return;
-        }
-
-        if (playerInfo.nowPsychicPowerValue < cost)
+        // 使用 GameDataMgr 的方法消耗灵能值（会自动触发UI更新事件）
+        if (!GameDataMgr.Instance.ConsumePsychicPower(psychicCost))
         {
             Debug.Log("[PhoneItem] 灵能值不足");
             ResetPosition();
             return;
         }
 
-        playerInfo.nowPsychicPowerValue -= cost;
-        Debug.Log($"[PhoneItem] 消耗灵能 {cost}，剩余 {playerInfo.nowPsychicPowerValue}");
-
+        // 激活渲染隐藏层UI
         if (renderTextureRoot != null)
         {
             renderTextureRoot.SetActive(true);
@@ -74,6 +74,7 @@ public class PhoneItem : DraggableItem
 
     protected override void OnDragEnd()
     {
+        // 失活渲染隐藏层UI
         if (renderTextureRoot != null)
         {
             renderTextureRoot.SetActive(false);

@@ -87,6 +87,9 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
         // 刷新深度和缩放
         UpdateDepthAndScale();
+
+        // 触发乘客数量变化事件
+        NotifyPassengerCountChanged();
     }
 
     /// <summary>
@@ -129,6 +132,9 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         Passenger passenger = obj.GetComponent<Passenger>();
         passenger.Init(data);
         passengerList.Add(passenger);
+
+        // 触发乘客数量变化事件
+        NotifyPassengerCountChanged();
     }
 
     /// <summary>
@@ -142,23 +148,34 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
                 GameObject.Destroy(p.gameObject);
         }
         passengerList.Clear();
+
+        // 触发乘客数量变化事件
+        NotifyPassengerCountChanged();
     }
 
     /// <summary>
-    /// 当某乘客被踢出/移除时调用，尝试补位等待队列
-    /// 如果驱逐的是普通乘客，则扣除信任值
+    /// 当某乘客被踢出/移除时调用
     /// </summary>
     public void OnPassengerKicked(Passenger passenger)
     {
         if (passenger != null)
             GameObject.Destroy(passenger.gameObject);
+        
         passengerList.Remove(passenger);
+        
+        // 如果驱逐的是普通乘客，扣除信任度
         if (!passenger.passengerInfo.isGhost)
-            ResourcesMgr.Instance.SubPassengerTrustValue(1);
+            GameDataMgr.Instance.SubTrustValue(1);
+        
+        // 如果是鬼魂，播放消散音效
         if (passenger.passengerInfo.isGhost)
             MusicMgr.Instance.PlaySound("Music/26GGJsound/ghost_disappear", false);
+        
         TrySpawnFromWaitingQueue();
         UpdateDepthAndScale();
+        
+        // 触发乘客数量变化事件
+        NotifyPassengerCountChanged();
     }
 
     /// <summary>
@@ -334,5 +351,14 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             if (p.ghostFeatureRenderer != null)
                 p.ghostFeatureRenderer.sortingOrder = sorting + 1; // 特征层略前
         }
+    }
+
+    /// <summary>
+    /// 触发乘客数量变化事件
+    /// </summary>
+    private void NotifyPassengerCountChanged()
+    {
+        int count = passengerList?.Count ?? 0;
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_PassengerCountChanged, count);
     }
 }

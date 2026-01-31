@@ -29,9 +29,27 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     private List<MaskInfo> maskInfoList;
     public List<MaskInfo> MaskInfoList => maskInfoList;
 
+    /// <summary>
+    /// 信任度（原稳定度和信任值合并）
+    /// </summary>
+    private int _trustValue;
+    public int TrustValue
+    {
+        get => _trustValue;
+        private set
+        {
+            _trustValue = Mathf.Clamp(value, 0, MaxTrustValue);
+            EventCenter.Instance.EventTrigger<int>(E_EventType.E_StabilityChanged, _trustValue);
+        }
+    }
+
+    /// <summary>
+    /// 最大信任度
+    /// </summary>
+    public int MaxTrustValue { get; private set; } = 5;
+
     // --- 灵能过低提示音相关 ---
-    private const int LowPsychicThreshold = 5;
-    // 请将低灵能警告音效放在 Resources/Music/26GGJsound/percentlow 路径下，或修改此常量
+    private const int LowPsychicThreshold = 2;
     private const string LowPsychicSoundPath = "Music/26GGJsound/percentlow";
     private AudioSource lowPsychicLoopSource;
     private bool lowPsychicSoundLoading;
@@ -43,14 +61,102 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
         elevatorInfo = JsonMgr.Instance.LoadData<ElevatorInfo>("ElevatorInfo");
         maskInfoList = JsonMgr.Instance.LoadData<List<MaskInfo>>("MaskInfo");
         settingInfo = JsonMgr.Instance.LoadData<SettingInfo>("Settings");
+
+        // 初始化信任度
+        _trustValue = MaxTrustValue;
     }
+
+    /// <summary>
+    /// 初始化信任度（游戏开始时调用）
+    /// </summary>
+    public void InitTrustValue(int maxValue)
+    {
+        MaxTrustValue = maxValue;
+        _trustValue = maxValue;
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_StabilityChanged, _trustValue);
+    }
+
+    /// <summary>
+    /// 扣除信任度
+    /// </summary>
+    public void SubTrustValue(int value)
+    {
+        TrustValue -= value;
+        Debug.Log($"[GameDataMgr] 信任度减少 {value}，当前: {TrustValue}");
+    }
+
+    /// <summary>
+    /// 增加信任度
+    /// </summary>
+    public void AddTrustValue(int value)
+    {
+        TrustValue += value;
+        Debug.Log($"[GameDataMgr] 信任度增加 {value}，当前: {TrustValue}");
+    }
+
+    /// <summary>
+    /// 检查信任度是否为0（游戏失败）
+    /// </summary>
+    public bool IsTrustDepleted => _trustValue <= 0;
+
+    #region 灵能值操作方法
+
+    /// <summary>
+    /// 设置灵能值并触发UI更新事件
+    /// </summary>
+    public void SetPsychicPower(int value)
+    {
+        playerInfo.nowPsychicPowerValue = Mathf.Clamp(value, 0, playerInfo.maxPsychicPowerValue);
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_PsychicPowerChanged, playerInfo.nowPsychicPowerValue);
+    }
+
+    /// <summary>
+    /// 增加灵能值并触发UI更新事件
+    /// </summary>
+    public void AddPsychicPower(int value)
+    {
+        playerInfo.nowPsychicPowerValue += value;
+        if (playerInfo.nowPsychicPowerValue > playerInfo.maxPsychicPowerValue)
+            playerInfo.nowPsychicPowerValue = playerInfo.maxPsychicPowerValue;
+
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_PsychicPowerChanged, playerInfo.nowPsychicPowerValue);
+        Debug.Log($"[GameDataMgr] 灵能增加 {value}，当前: {playerInfo.nowPsychicPowerValue}");
+    }
+
+    /// <summary>
+    /// 消耗灵能值并触发UI更新事件
+    /// </summary>
+    /// <returns>是否成功消耗</returns>
+    public bool ConsumePsychicPower(int value)
+    {
+        if (playerInfo.nowPsychicPowerValue < value)
+        {
+            Debug.Log($"[GameDataMgr] 灵能不足，需要 {value}，当前: {playerInfo.nowPsychicPowerValue}");
+            return false;
+        }
+
+        playerInfo.nowPsychicPowerValue -= value;
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_PsychicPowerChanged, playerInfo.nowPsychicPowerValue);
+        Debug.Log($"[GameDataMgr] 消耗灵能 {value}，当前: {playerInfo.nowPsychicPowerValue}");
+        return true;
+    }
+
+    /// <summary>
+    /// 获取当前灵能值
+    /// </summary>
+    public int GetCurrentPsychicPower()
+    {
+        return playerInfo.nowPsychicPowerValue;
+    }
+
+    #endregion
 
     /// <summary>
     /// 保存当前的设置数据到本地
     /// </summary>
     public void SaveSettingData()
     {
-        JsonMgr.Instance.SaveData(settingInfo,"Settings");
+        JsonMgr.Instance.SaveData(settingInfo, "Settings");
     }
 
     /// <summary>
@@ -71,14 +177,12 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
 
         if (playerInfo.nowPsychicPowerValue < LowPsychicThreshold)
         {
-            // 尚未播放且未在加载，开始加载并播放
             if (lowPsychicLoopSource == null && !lowPsychicSoundLoading)
             {
                 lowPsychicSoundLoading = true;
                 MusicMgr.Instance.PlaySound(LowPsychicSoundPath, true, source =>
                 {
                     lowPsychicSoundLoading = false;
-                    // 如果加载完成时灵能已恢复，则立刻停止
                     if (playerInfo.nowPsychicPowerValue >= LowPsychicThreshold)
                     {
                         MusicMgr.Instance.StopSound(source);
@@ -94,28 +198,12 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
         }
     }
 
-    /// <summary>
-    /// 停止低灵能警告音
-    /// </summary>
     private void StopLowPsychicSound()
     {
         if (lowPsychicLoopSource != null)
         {
             MusicMgr.Instance.StopSound(lowPsychicLoopSource);
             lowPsychicLoopSource = null;
-        }
-    }
-
-    /// <summary>
-    /// 增加玩家灵能值
-    /// </summary>
-    /// <param name="value">灵能值</param>
-    public void AddPlayerPsychicPower(int value)
-    {
-        playerInfo.nowPsychicPowerValue += value;
-        if (playerInfo.nowPsychicPowerValue > playerInfo.maxPsychicPowerValue)
-        {
-            playerInfo.nowPsychicPowerValue = playerInfo.maxPsychicPowerValue;
         }
     }
 }

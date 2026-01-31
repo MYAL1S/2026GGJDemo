@@ -11,7 +11,6 @@ public class EventMgr : BaseSingleton<EventMgr>
     private Coroutine fogCoroutine;
     private FogPanel fogPanel;
 
-<<<<<<< HEAD
     /// <summary>
     /// 开始观看铜镜
     /// </summary>
@@ -118,7 +117,5 @@ public class EventMgr : BaseSingleton<EventMgr>
         fogCoroutine = null;
     }
 
-=======
->>>>>>> c10605e05a37127ce0294002779683d49e93f6c0
     private EventMgr() { }
 }

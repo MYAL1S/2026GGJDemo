@@ -62,7 +62,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 00b85aa6ff155af45885ee059b1c3bfe, type: 2}
   waveSOList:
   - {fileID: 11400000, guid: 89c6e8fba526770479762d9c2cd77fd7, type: 2}
-  passengerTrustValue: 100
+  passengerTrustValue: 1
   stabilityValue: 0
   maxSpecialPassengerCount: 2
   maxMirrorOccourence: 1

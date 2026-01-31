@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,12 +18,10 @@ public class GameOverPanel : BasePanel
         base.OnButtonClick(name);
         switch (name)
         {
-            case "RestartButton":
-
-                UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
-                break;
-            case "MainMenuButton":
-                UnityEngine.SceneManagement.SceneManager.LoadScene(0);
+            case "BtnReturn":
+                Time.timeScale = 1;
+                UIMgr.Instance.SetAllPanelsActive(false);
+                SceneMgr.Instance.LoadSceneAsync("BeginScene");
                 break;
         }
     }

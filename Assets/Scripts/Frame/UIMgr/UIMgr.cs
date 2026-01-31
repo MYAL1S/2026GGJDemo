@@ -21,7 +21,10 @@ public enum E_UILayer
 /// </summary>
 public class UIMgr : BaseSingleton<UIMgr>
 {
-    private abstract class BasePanelInfo { }
+    private abstract class BasePanelInfo
+    {
+        public BasePanel panelBase;   // 新增：统一的面板引用
+    }
 
     private class PanelInfo<T> : BasePanelInfo
     {
@@ -272,6 +275,7 @@ public class UIMgr : BaseSingleton<UIMgr>
             GameObject panelObj = GameObject.Instantiate(panel, faterTransform, false);
             T panelCom = panelObj.GetComponent<T>();
             panelInfo.panel = panelCom;
+            panelInfo.panelBase = panelCom;            // 新增：赋值统一引用
             panelCom.ShowMe();
             panelInfo.callback?.Invoke(panelInfo.panel);
             panelInfo.callback = null;
@@ -350,5 +354,20 @@ public class UIMgr : BaseSingleton<UIMgr>
         entry.eventID = type;
         entry.callback.AddListener(callback);
         trigger.triggers.Add(entry);
+    }
+
+    /// <summary>
+    /// 设置所有面板的激活状态
+    /// </summary>
+    /// <param name="isActive"></param>
+    public void SetAllPanelsActive(bool isActive)
+    {
+        foreach (var panelInfo in panelDic.Values)
+        {
+            if (panelInfo.panelBase != null)
+            {
+                panelInfo.panelBase.gameObject.SetActive(isActive);
+            }
+        }
     }
 }

@@ -45,6 +45,10 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     /// 最多镜像出现次数
     /// </summary>
     public int maxMirrorOccourence;
+    /// <summary>
+    /// 游戏是否结束了
+    /// </summary>
+    public bool isGameOver = false;
 
     /// <summary>
     /// 降低乘客信任值
@@ -66,8 +70,13 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     void Update()
     {
         print(passengerTrustValue);
+        if (isGameOver)
+            return;
+
+        isGameOver = passengerTrustValue <= 0;
+
         //当乘客信任值为0时 游戏失败
-        if (passengerTrustValue <= 0)
+        if (isGameOver)
             EventMgr.Instance.FallIntoAbyss();
     }
 }

@@ -18,9 +18,13 @@ public class GamePanel : BasePanel
     private Transform mirrorObj;
     private RawImage randerTexture;
     private Transform renderTextureObj;
-
+    private RawImage expel;
+    private Transform expelObj; 
     private PhoneItem phoneItem;
     private BellItem bellItem;
+
+    // 当前选中的乘客
+    private Passenger selectedPassenger;
 
     public override void Init()
     {
@@ -31,7 +35,8 @@ public class GamePanel : BasePanel
         mirrorObj = imgMirror.GetComponent<Transform>();
         randerTexture = GetControl<RawImage>("RenderTexture");
         renderTextureObj = randerTexture.GetComponent<Transform>();
-
+        expel = GetControl<RawImage>("Expel");
+        expelObj = expel.GetComponent<Transform>();
         InitItemSystem();
 
         // 注册事件
@@ -41,10 +46,47 @@ public class GamePanel : BasePanel
         EventCenter.Instance.AddEventListener<int>(E_EventType.E_PassengerCountChanged, UpdatePassengerUI);
         EventCenter.Instance.AddEventListener<bool>(E_EventType.E_ElevatorDirectionChanged, UpdateDirectionUI);
         EventCenter.Instance.AddEventListener<int>(E_EventType.E_CountdownUpdate, UpdateCountdownUI);
+        // 监听乘客点击事件
+        EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerClicked, OnPassengerClicked);
 
         HideMirrorUI();
+        HideExpelUI();
         InitPlayerData();
         InitUIDisplay();
+    }
+
+    /// <summary>
+    /// 乘客被点击时的处理
+    /// </summary>
+    private void OnPassengerClicked(Passenger passenger)
+    {
+        if (passenger == null)
+            return;
+
+        // 只有在电梯停靠状态才能显示驱逐UI
+        if (!ElevatorMgr.Instance.CanInteractPassengers)
+            return;
+
+        selectedPassenger = passenger;
+        ShowExpelUI();
+    }
+
+    /// <summary>
+    /// 显示驱逐UI
+    /// </summary>
+    public void ShowExpelUI()
+    {
+        if (expelObj != null)
+            expelObj.gameObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// 隐藏驱逐UI
+    /// </summary>
+    public void HideExpelUI()
+    {
+        if (expelObj != null)
+            expelObj.gameObject.SetActive(false);
     }
 
     private void InitItemSystem()
@@ -184,6 +226,20 @@ public class GamePanel : BasePanel
             case "BtnTip":
                 UIMgr.Instance.ShowPanel<TipPanel>();
                 break;
+            case "BtnExpel":
+                // 驱逐选中的乘客
+                if (selectedPassenger != null)
+                {
+                    PassengerMgr.Instance.OnPassengerKicked(selectedPassenger);
+                    selectedPassenger = null;
+                }
+                HideExpelUI();
+                break;
+            case "BtnCancel":
+                // 隐藏驱逐UI并清除选中状态
+                selectedPassenger = null;
+                HideExpelUI();
+                break;
         }
     }
 
@@ -206,6 +262,8 @@ public class GamePanel : BasePanel
         EventCenter.Instance.RemoveEventListener<int>(E_EventType.E_PassengerCountChanged, UpdatePassengerUI);
         EventCenter.Instance.RemoveEventListener<bool>(E_EventType.E_ElevatorDirectionChanged, UpdateDirectionUI);
         EventCenter.Instance.RemoveEventListener<int>(E_EventType.E_CountdownUpdate, UpdateCountdownUI);
+        // 移除乘客点击事件监听
+        EventCenter.Instance.RemoveEventListener<Passenger>(E_EventType.E_PassengerClicked, OnPassengerClicked);
         base.HideMe();
     }
 }

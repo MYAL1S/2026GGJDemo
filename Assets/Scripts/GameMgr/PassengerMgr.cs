@@ -222,6 +222,8 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
     /// <summary>
     /// 当乘客被点击时触发
+    /// 相关方法已弃用
+    /// 改为通过 BellItem 处理
     /// </summary>
     /// <param name="passenger"></param>
     private void OnPassengerClicked(Passenger passenger)
@@ -230,7 +232,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         //TODO: 处理乘客点击逻辑
         //应该显示一个小的二级面板 对乘客进行交互
         //此处仅作示例输出
-        EventCenter.Instance.EventTrigger<Passenger>(E_EventType.E_PassengerUIAppear, passenger);
+        //EventCenter.Instance.EventTrigger<Passenger>(E_EventType.E_PassengerUIAppear, passenger);
     }
 
     /// <summary>

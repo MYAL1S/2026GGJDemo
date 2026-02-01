@@ -1,14 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Main : MonoBehaviour
 {
-    /// <summary>
-    /// 
-    /// </summary>
     private void Awake()
     {
+        // 初始化鬼魂渲染系统
+        GhostRenderSystem.Instance.Setup();
         
         UIMgr.Instance.ShowPanel<LoginPanel>(E_UILayer.Middle, (BasePanel) =>
         {
@@ -16,16 +13,5 @@ public class Main : MonoBehaviour
             GameObject reallyObj = Instantiate(go);
             DontDestroyOnLoad(reallyObj);
         });
-    }
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 }

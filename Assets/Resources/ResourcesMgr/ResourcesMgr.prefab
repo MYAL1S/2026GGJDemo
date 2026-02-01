@@ -54,7 +54,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b6b41fa29b322de4a855dcd09127e13a, type: 2}
   - {fileID: 11400000, guid: fa237df04db02364586949374f6fe667, type: 2}
   - {fileID: 11400000, guid: 385cb19566d90bc459bd049d30af1b75, type: 2}
-  passengerPrefab: {fileID: 1078737488579068046, guid: 4e95195fe69bf4342ba53f6c5e1881f8, type: 3}
+  passengerPrefab: {fileID: 1040739472650254369, guid: 4baf8ff319593d44e9d7985deb335f40, type: 3}
   passengerSOList:
   - {fileID: 11400000, guid: 6560769b9bb1bb14786412e1f308b5c6, type: 2}
   - {fileID: 11400000, guid: fd7cbedcd3d46ef489969cda5b35d6b4, type: 2}

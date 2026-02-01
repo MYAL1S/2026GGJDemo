@@ -16,11 +16,18 @@ public class GamePanel : BasePanel
     public RawImage[] rawImgUpDownArrow;
     private RawImage imgMirror;
     private Transform mirrorObj;
-    private RawImage randerTexture;
-    private Transform renderTextureObj;
+    
+    /// <summary>
+    /// 手机屏幕（遮罩方案使用 Image）
+    /// </summary>
+    private Image phoneScreenImage;
+    private Transform phoneScreenObj;
 
     private PhoneItem phoneItem;
     private BellItem bellItem;
+
+    // 乘客容器
+    private RectTransform passengerContainer;
 
     public override void Init()
     {
@@ -29,8 +36,14 @@ public class GamePanel : BasePanel
         txtTimeInfo = GetControl<Text>("TxtTimeInfo");
         imgMirror = GetControl<RawImage>("Mirror");
         mirrorObj = imgMirror.GetComponent<Transform>();
-        randerTexture = GetControl<RawImage>("RenderTexture");
-        renderTextureObj = randerTexture.GetComponent<Transform>();
+        
+        // 获取手机屏幕 Image
+        phoneScreenImage = GetControl<Image>("PhoneScreen");
+        if (phoneScreenImage != null)
+            phoneScreenObj = phoneScreenImage.transform;
+
+        // 初始化乘客容器
+        InitPassengerContainer();
 
         InitItemSystem();
 
@@ -47,6 +60,36 @@ public class GamePanel : BasePanel
         InitUIDisplay();
     }
 
+    /// <summary>
+    /// 初始化乘客容器
+    /// </summary>
+    private void InitPassengerContainer()
+    {
+        Transform existingContainer = transform.Find("PassengerContainer");
+        if (existingContainer != null)
+        {
+            passengerContainer = existingContainer.GetComponent<RectTransform>();
+            return;
+        }
+
+        GameObject containerObj = new GameObject("PassengerContainer");
+        passengerContainer = containerObj.AddComponent<RectTransform>();
+        passengerContainer.SetParent(transform, false);
+
+        passengerContainer.anchorMin = Vector2.zero;
+        passengerContainer.anchorMax = Vector2.one;
+        passengerContainer.offsetMin = Vector2.zero;
+        passengerContainer.offsetMax = Vector2.zero;
+        passengerContainer.pivot = new Vector2(0.5f, 0.5f);
+
+        passengerContainer.SetAsFirstSibling();
+    }
+
+    public Transform GetPassengerContainer()
+    {
+        return passengerContainer;
+    }
+
     private void InitItemSystem()
     {
         ItemConfigSO itemConfig = Resources.Load<ItemConfigSO>("Config/ItemConfig");
@@ -57,7 +100,10 @@ public class GamePanel : BasePanel
             phoneItem = phoneObj.GetComponent<PhoneItem>();
             if (phoneItem == null)
                 phoneItem = phoneObj.gameObject.AddComponent<PhoneItem>();
-            phoneItem.SetRenderTextureRoot(renderTextureObj.gameObject);
+            
+            if (phoneScreenObj != null)
+                phoneItem.SetRenderTextureRoot(phoneScreenObj.gameObject);
+            
             if (itemConfig != null)
                 phoneItem.SetItemConfig(itemConfig);
         }
@@ -72,8 +118,29 @@ public class GamePanel : BasePanel
                 bellItem.SetItemConfig(itemConfig);
         }
 
-        if (renderTextureObj != null)
-            renderTextureObj.gameObject.SetActive(false);
+        if (phoneScreenObj != null)
+        {
+            phoneScreenObj.gameObject.SetActive(false);
+            SetupPhoneScreenCanvasSorting();
+        }
+    }
+
+    /// <summary>
+    /// 设置手机屏幕的 Canvas 排序层级
+    /// </summary>
+    private void SetupPhoneScreenCanvasSorting()
+    {
+        if (phoneScreenObj == null)
+            return;
+
+        Canvas phoneCanvas = phoneScreenObj.GetComponent<Canvas>();
+        if (phoneCanvas == null)
+            phoneCanvas = phoneScreenObj.gameObject.AddComponent<Canvas>();
+        phoneCanvas.overrideSorting = true;
+        phoneCanvas.sortingOrder = 100;
+
+        if (phoneScreenObj.GetComponent<GraphicRaycaster>() == null)
+            phoneScreenObj.gameObject.AddComponent<GraphicRaycaster>();
     }
 
     private void InitPlayerData()
@@ -190,13 +257,6 @@ public class GamePanel : BasePanel
     public void ShowMirrorUI() => mirrorObj.gameObject.SetActive(true);
     public void HideMirrorUI() => mirrorObj.gameObject.SetActive(false);
 
-    public void ShowRenderTextureUI(int time)
-    {
-        renderTextureObj.gameObject.SetActive(true);
-        TimerMgr.Instance.CreateTimer(false, time, HideRenderTextureUI);
-    }
-
-    private void HideRenderTextureUI() => renderTextureObj.gameObject.SetActive(false);
     private void UpdateMirrorUI() { }
 
     public override void HideMe()

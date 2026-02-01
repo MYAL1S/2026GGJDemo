@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// 可拖曳物品基类
+/// 可拖放物品基类
 /// </summary>
 public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
@@ -13,9 +13,14 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
     protected RectTransform rectTransform;
 
     /// <summary>
-    /// 所属Canvas
+    /// 父级Canvas
     /// </summary>
-    protected Canvas canvas;
+    protected Canvas parentCanvas;
+
+    /// <summary>
+    /// 物品自身的Canvas（用于排序）
+    /// </summary>
+    protected Canvas itemCanvas;
 
     /// <summary>
     /// 原始位置
@@ -23,31 +28,55 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
     protected Vector2 originalPosition;
 
     /// <summary>
-    /// 是否正在拖曳
+    /// 是否正在拖放
     /// </summary>
     protected bool isDragging = false;
 
     /// <summary>
-    /// 拖曳计时器
+    /// 拖放计时器
     /// </summary>
     protected float dragTimer = 0f;
 
     /// <summary>
-    /// 最大拖曳时间（秒）
+    /// 最大拖放时间（秒）
     /// </summary>
     [SerializeField]
     protected float maxDragTime = 5f;
 
     /// <summary>
-    /// 是否计时结束
+    /// 是否超时结束
     /// </summary>
     protected bool isTimerExpired = false;
+
+    /// <summary>
+    /// 物品 UI 排序层级（高于乘客）
+    /// </summary>
+    protected const int ITEM_SORTING_ORDER = 100;
 
     protected virtual void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
-        canvas = GetComponentInParent<Canvas>();
+        parentCanvas = GetComponentInParent<Canvas>();
         originalPosition = rectTransform.anchoredPosition;
+
+        // 设置物品自身的 Canvas 排序层级
+        SetupCanvasSorting();
+    }
+
+    /// <summary>
+    /// 设置 Canvas 排序层级，确保显示在乘客上方
+    /// </summary>
+    protected virtual void SetupCanvasSorting()
+    {
+        itemCanvas = GetComponent<Canvas>();
+        if (itemCanvas == null)
+            itemCanvas = gameObject.AddComponent<Canvas>();
+        itemCanvas.overrideSorting = true;
+        itemCanvas.sortingOrder = ITEM_SORTING_ORDER;
+
+        // 确保有 GraphicRaycaster 用于点击检测
+        if (GetComponent<GraphicRaycaster>() == null)
+            gameObject.AddComponent<GraphicRaycaster>();
     }
 
     protected virtual void Update()
@@ -65,7 +94,7 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
 
     public virtual void OnBeginDrag(PointerEventData eventData)
     {
-        // 检查电梯状态
+        // 非停靠状态
         if (!ElevatorMgr.Instance.CanUseMask)
         {
             eventData.pointerDrag = null;
@@ -76,58 +105,53 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
         dragTimer = 0f;
         isTimerExpired = false;
 
-        Debug.Log($"[{GetType().Name}] 开始拖曳");
+        Debug.Log($"[{GetType().Name}] 开始拖放");
         OnDragStart();
     }
 
+    // 确保 OnDrag 方法是 virtual 的（如果还不是的话）
     public virtual void OnDrag(PointerEventData eventData)
     {
-        if (!isDragging || isTimerExpired)
+        if (isTimerExpired)
             return;
 
         // 跟随鼠标移动
-        rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
+        rectTransform.anchoredPosition += eventData.delta / parentCanvas.scaleFactor;
     }
 
     public virtual void OnEndDrag(PointerEventData eventData)
     {
-        if (!isDragging)
-            return;
-
-        Debug.Log($"[{GetType().Name}] 结束拖曳");
-        OnDragEnd();
-        ResetPosition();
-    }
-
-    /// <summary>
-    /// 计时结束时调用
-    /// </summary>
-    protected virtual void OnTimerExpired()
-    {
-        Debug.Log($"[{GetType().Name}] 计时结束");
-        OnDragEnd();
-        ResetPosition();
         isDragging = false;
+        Debug.Log($"[{GetType().Name}] 结束拖放");
+        OnDragEnd();
+        ResetPosition();
     }
 
     /// <summary>
-    /// 回到原点
+    /// 重置到原始位置
     /// </summary>
     protected virtual void ResetPosition()
     {
         rectTransform.anchoredPosition = originalPosition;
-        isDragging = false;
-        isTimerExpired = false;
-        dragTimer = 0f;
     }
 
     /// <summary>
-    /// 拖曳开始时的处理（子类实现）
+    /// 超时回调
+    /// </summary>
+    protected virtual void OnTimerExpired()
+    {
+        Debug.Log($"[{GetType().Name}] 拖放超时");
+        OnDragEnd();
+        ResetPosition();
+    }
+
+    /// <summary>
+    /// 拖放开始时调用
     /// </summary>
     protected abstract void OnDragStart();
 
     /// <summary>
-    /// 拖曳结束时的处理（子类实现）
+    /// 拖放结束时调用
     /// </summary>
     protected abstract void OnDragEnd();
 }

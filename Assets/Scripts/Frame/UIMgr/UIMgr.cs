@@ -64,7 +64,7 @@ public class UIMgr : BaseSingleton<UIMgr>
     private UIMgr()
     {
         // 初始化UI画布、相机、事件系统
-        uiCamera = GameObject.Instantiate(ResMgr.Instance.Load<GameObject>("UI/UICamera")).GetComponent<Camera>();
+        uiCamera = GameObject.Instantiate(ResMgr.Instance.Load<GameObject>("UI/UICamera"),Vector3.forward*(-10),Quaternion.identity).GetComponent<Camera>();
         GameObject.DontDestroyOnLoad(uiCamera);
 
         uiCanvas = GameObject.Instantiate(ResMgr.Instance.Load<GameObject>("UI/Canvas")).GetComponent<Canvas>();

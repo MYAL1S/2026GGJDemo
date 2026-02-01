@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Xml;
 using UnityEngine;
 
 /// <summary>
@@ -12,6 +11,11 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     private const float ScaleNear = 1.25f;
     private const float ScaleFar  = 0.85f;
     private const int   SortingMultiplier = 100;
+    private const int   BaseSortingOrder  = 10; // 基础排序层级
+    /// <summary>
+    /// 乘客最大排序层级（必须低于道具的 100）
+    /// </summary>
+    private const int MAX_PASSENGER_SORTING = 90;
 
     public List<Passenger> passengerList;
     private readonly List<PassengerSO> tempNormals  = new List<PassengerSO>();
@@ -19,13 +23,15 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     private readonly List<PassengerSO> tempSpecials = new List<PassengerSO>();
     private readonly Queue<PassengerSO> waitingQueue = new Queue<PassengerSO>();
 
+    // 缓存 GamePanel 引用
+    private GamePanel cachedGamePanel;
+
     private PassengerMgr()
     {
         passengerList = new List<Passenger>();
-        //注册乘客点击事件监听
+        // 注册乘客点击事件监听
         EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerClicked, OnPassengerClicked);
-        //注册每帧更新监听
-        MonoMgr.Instance.AddUpdateListener(OnUpdate);
+        // 注意：UI 系统不需要 OnUpdate 进行射线检测，使用 IPointerClickHandler 接口
     }
 
     /// <summary>
@@ -36,6 +42,19 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         ClearAllPassengers();
         waitingQueue.Clear();
 
+        // 确保 GamePanel 已加载
+        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
+        {
+            cachedGamePanel = panel;
+            DoSpawnWave();
+        });
+    }
+
+    /// <summary>
+    /// 实际生成乘客逻辑
+    /// </summary>
+    private void DoSpawnWave()
+    {
         List<Vector3> spawnPoints = new List<Vector3>(GameLevelMgr.Instance.currentLevelDetail.passengerSpawnPositionArray);
         Shuffle(spawnPoints);
         int capacity = spawnPoints.Count;
@@ -52,35 +71,33 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         int specialCount = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.specialPassengerCount, tempSpecials.Count);
 
         // 先生成特殊乘客，占用容量
-        int specialsSpawned = 0;
         for (int i = 0; i < specialCount; i++)
         {
             if (capacityLeft <= 0) { waitingQueue.Enqueue(tempSpecials[i]); continue; }
-            GeneratePassenger(tempSpecials[i], spawnPoints[spawnIndex++]);
+            GeneratePassengerImmediate(tempSpecials[i], spawnPoints[spawnIndex++]);
             capacityLeft--;
-            specialsSpawned++;
         }
 
         // 再生成鬼魂
-        int ghostsSpawned = 0;
         int gi = 0;
+        int ghostsSpawned = 0;
         while (ghostsSpawned < ghostCount)
         {
             if (gi >= tempGhosts.Count) break;
             if (capacityLeft <= 0) { waitingQueue.Enqueue(tempGhosts[gi++]); continue; }
-            GeneratePassenger(tempGhosts[gi++], spawnPoints[spawnIndex++]);
+            GeneratePassengerImmediate(tempGhosts[gi++], spawnPoints[spawnIndex++]);
             capacityLeft--;
             ghostsSpawned++;
         }
 
         // 最后生成普通乘客
-        int normalsSpawned = 0;
         int ni = 0;
+        int normalsSpawned = 0;
         while (normalsSpawned < normalCount)
         {
             if (ni >= tempNormals.Count) break;
             if (capacityLeft <= 0) { waitingQueue.Enqueue(tempNormals[ni++]); continue; }
-            GeneratePassenger(tempNormals[ni++], spawnPoints[spawnIndex++]);
+            GeneratePassengerImmediate(tempNormals[ni++], spawnPoints[spawnIndex++]);
             capacityLeft--;
             normalsSpawned++;
         }
@@ -121,20 +138,45 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     }
 
     /// <summary>
-    /// 生成乘客 此处直接将乘客实例化到场景中
+    /// 生成乘客（立即生成，用于已获取 GamePanel 后）
+    /// </summary>
+    private void GeneratePassengerImmediate(PassengerSO data, Vector3 position)
+    {
+        if (data == null || cachedGamePanel == null)
+            return;
+
+        Transform parent = cachedGamePanel.GetPassengerContainer();
+        GameObject obj = GameObject.Instantiate(ResourcesMgr.Instance.passengerPrefab, parent);
+
+        // 设置 RectTransform 的锚点位置
+        RectTransform rectTransform = obj.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            rectTransform.anchoredPosition = new Vector2(position.x, position.y);
+            rectTransform.localRotation = Quaternion.identity;
+            rectTransform.localScale = Vector3.one;
+        }
+
+        Passenger passenger = obj.GetComponent<Passenger>();
+        passenger.Init(data);
+        passengerList.Add(passenger);
+    }
+
+    /// <summary>
+    /// 生成乘客（异步获取 GamePanel）
     /// </summary>
     private void GeneratePassenger(PassengerSO data, Vector3 position)
     {
         if (data == null)
             return;
 
-        GameObject obj = GameObject.Instantiate(ResourcesMgr.Instance.passengerPrefab, position, Quaternion.identity);
-        Passenger passenger = obj.GetComponent<Passenger>();
-        passenger.Init(data);
-        passengerList.Add(passenger);
-
-        // 触发乘客数量变化事件
-        NotifyPassengerCountChanged();
+        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
+        {
+            cachedGamePanel = panel;
+            GeneratePassengerImmediate(data, position);
+            UpdateDepthAndScale();
+            NotifyPassengerCountChanged();
+        });
     }
 
     /// <summary>
@@ -148,8 +190,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
                 GameObject.Destroy(p.gameObject);
         }
         passengerList.Clear();
-
-        // 触发乘客数量变化事件
         NotifyPassengerCountChanged();
     }
 
@@ -173,8 +213,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         
         TrySpawnFromWaitingQueue();
         UpdateDepthAndScale();
-        
-        // 触发乘客数量变化事件
         NotifyPassengerCountChanged();
     }
 
@@ -186,7 +224,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         if (waitingQueue.Count == 0)
             return;
 
-        // 计算当前已占用点位，寻找空位
         var spawnPoints = GameLevelMgr.Instance.currentLevelDetail.passengerSpawnPositionArray;
         foreach (var pos in spawnPoints)
         {
@@ -194,7 +231,8 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             for (int i = 0; i < passengerList.Count; i++)
             {
                 if (passengerList[i] == null) continue;
-                if (Vector3.Distance(passengerList[i].transform.position, pos) < 0.01f)
+                RectTransform rt = passengerList[i].GetComponent<RectTransform>();
+                if (rt != null && Vector2.Distance(rt.anchoredPosition, new Vector2(pos.x, pos.y)) < 0.01f)
                 {
                     occupied = true;
                     break;
@@ -203,7 +241,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             if (!occupied && waitingQueue.Count > 0)
             {
                 var data = waitingQueue.Dequeue();
-                GeneratePassenger(data, pos);
+                GeneratePassengerImmediate(data, pos);
             }
         }
     }
@@ -222,34 +260,20 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
     /// <summary>
     /// 当乘客被点击时触发
-    /// 相关方法已弃用
-    /// 改为通过 BellItem 处理
     /// </summary>
-    /// <param name="passenger"></param>
     private void OnPassengerClicked(Passenger passenger)
     {
-
-        //TODO: 处理乘客点击逻辑
-        //应该显示一个小的二级面板 对乘客进行交互
-        //此处仅作示例输出
-        //EventCenter.Instance.EventTrigger<Passenger>(E_EventType.E_PassengerUIAppear, passenger);
-    }
-
-    /// <summary>
-    /// 每一帧执行的逻辑 检测是否点击了乘客
-    /// </summary>
-    private void OnUpdate()
-    {
-        // 停靠状态才允许点击乘客
-        if (!ElevatorMgr.Instance.CanInteractPassengers)
+        // 如果交互面板已经显示，不再处理新的点击
+        if (PassengerPanel.IsShowing)
             return;
 
-        if (Input.GetMouseButtonDown(0))
+        // 显示乘客交互面板
+        UIMgr.Instance.ShowPanel<PassengerPanel>(E_UILayer.Top, (panel) =>
         {
-            MathUtil.RayCast2D<Passenger>(Camera.main.ScreenPointToRay(Input.mousePosition), (passenger) => {
-                passenger?.OnMouseDown();
-            },1000,1<<LayerMask.NameToLayer("Passenger"));
-        }
+            panel.SetSelectedPassenger(passenger);
+            // 高亮被选中的乘客
+            passenger.SetHighlight(true);
+        });
     }
 
     /// <summary>
@@ -260,14 +284,14 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         if (passengerList == null || passengerList.Count == 0)
             return;
 
-        // 选出“最远”的鬼魂（Y 最大视为更远）
         Passenger ghost = null;
         float ghostY = float.MinValue;
         foreach (var p in passengerList)
         {
             if (p != null && p.passengerInfo != null && p.passengerInfo.isGhost)
             {
-                float y = p.transform.position.y;
+                RectTransform rt = p.GetComponent<RectTransform>();
+                float y = rt != null ? rt.anchoredPosition.y : p.transform.localPosition.y;
                 if (y > ghostY)
                 {
                     ghostY = y;
@@ -281,7 +305,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             return;
         }
 
-        // 找一个更靠前（Y 更低）的普通乘客来交换
         Passenger swapTarget = null;
         float candidateY = float.MaxValue;
         foreach (var p in passengerList)
@@ -289,7 +312,8 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             if (p == null || p.passengerInfo == null || p.passengerInfo.isGhost)
                 continue;
 
-            float y = p.transform.position.y;
+            RectTransform rt = p.GetComponent<RectTransform>();
+            float y = rt != null ? rt.anchoredPosition.y : p.transform.localPosition.y;
             if (y < ghostY && y < candidateY)
             {
                 candidateY = y;
@@ -297,15 +321,18 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             }
         }
 
-        // 交换位置（若存在更前的乘客）
         if (swapTarget != null)
         {
-            Vector3 ghostPos = ghost.transform.position;
-            ghost.transform.position = swapTarget.transform.position;
-            swapTarget.transform.position = ghostPos;
+            RectTransform ghostRt = ghost.GetComponent<RectTransform>();
+            RectTransform targetRt = swapTarget.GetComponent<RectTransform>();
+            if (ghostRt != null && targetRt != null)
+            {
+                Vector2 ghostPos = ghostRt.anchoredPosition;
+                ghostRt.anchoredPosition = targetRt.anchoredPosition;
+                targetRt.anchoredPosition = ghostPos;
+            }
         }
 
-        // 交换后统一刷新 SortingOrder 与 Scale
         UpdateDepthAndScale();
     }
 
@@ -330,28 +357,28 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         foreach (var p in passengerList)
         {
             if (p == null) continue;
-            float y = p.transform.position.y;
+            RectTransform rt = p.GetComponent<RectTransform>();
+            float y = rt != null ? rt.anchoredPosition.y : 0;
             minY = Mathf.Min(minY, y);
             maxY = Mathf.Max(maxY, y);
         }
-        // 避免除零
+
         if (Mathf.Approximately(minY, maxY))
             maxY = minY + 0.01f;
 
         foreach (var p in passengerList)
         {
             if (p == null) continue;
-            float y = p.transform.position.y;
-            float t = Mathf.InverseLerp(maxY, minY, y); // Y 越低 t 越接近 1
+            RectTransform rt = p.GetComponent<RectTransform>();
+            float y = rt != null ? rt.anchoredPosition.y : 0;
+            float t = Mathf.InverseLerp(maxY, minY, y);
             float scale = Mathf.Lerp(ScaleFar, ScaleNear, t);
-            int sorting = Mathf.RoundToInt((maxY - y) * SortingMultiplier);
+            
+            // 限制排序层级在安全范围内（5 ~ 90）
+            int sorting = Mathf.RoundToInt(Mathf.Lerp(5, MAX_PASSENGER_SORTING, t));
 
             p.transform.localScale = Vector3.one * scale;
-
-            if (p.mainRender != null)
-                p.mainRender.sortingOrder = sorting;
-            if (p.ghostFeatureRenderer != null)
-                p.ghostFeatureRenderer.sortingOrder = sorting + 1; // 特征层略前
+            p.SetSortingOrder(sorting - 5); // SetSortingOrder 会加上 BASE_SORTING_ORDER
         }
     }
 

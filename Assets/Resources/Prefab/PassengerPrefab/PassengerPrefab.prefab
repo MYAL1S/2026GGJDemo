@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 6368172106609071499}
   - component: {fileID: 8872166395087814474}
   - component: {fileID: 2065435732691940262}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: PassengerPrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -50,6 +50,7 @@ MonoBehaviour:
   mainRender: {fileID: 9028374524921240307}
   ghostFeatureRenderer: {fileID: 920165193852128213}
   passengerInfo: {fileID: 0}
+  highlightColor: {r: 1, g: 1, b: 0.5, a: 1}
 --- !u!70 &2065435732691940262
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -95,7 +96,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1829263256890951639}
   - component: {fileID: 9028374524921240307}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: mainRender
   m_TagString: Untagged
   m_Icon: {fileID: 0}

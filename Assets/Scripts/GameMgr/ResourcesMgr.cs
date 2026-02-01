@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using UnityEngine;
 
 /// <summary>
@@ -8,52 +7,55 @@ using UnityEngine;
 /// </summary>
 public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
 {
-    /// <summary>
-    /// 记录关卡详情的ScriptableObject列表
-    /// </summary>
     [Header("LevelInfo")]
     [Tooltip("存储1-18层每一层的具体关卡信息")]
     public List<LevelDetailSO> levelDetailSOList = new List<LevelDetailSO>();
-    /// <summary>
-    /// 乘客预制体
-    /// </summary>
+
     [Header("PassengerInfo")]
-    [Tooltip("存储通用的乘客预设体")]
+    [Tooltip("存储通用的乘客预制体")]
     public GameObject passengerPrefab;
-    /// <summary>
-    /// 乘客的ScriptableObject列表
-    /// </summary>
     [Tooltip("存储所有的乘客的具体信息")]
     public List<PassengerSO> passengerSOList = new List<PassengerSO>();
-    /// <summary>
-    /// 波数详情的ScriptableObject列表
-    /// </summary>
+
     public List<WaveDetailSO> waveSOList = new List<WaveDetailSO>();
+
     /// <summary>
     /// 乘客的信任值
     /// </summary>
     public int passengerTrustValue;
+
     /// <summary>
     /// 稳定度值
     /// </summary>
-    public int stabilityValue;
+    private int _stabilityValue;
+    public int stabilityValue
+    {
+        get => _stabilityValue;
+        set
+        {
+            _stabilityValue = Mathf.Max(0, value);
+            // 触发稳定度变化事件
+            EventCenter.Instance.EventTrigger<int>(E_EventType.E_StabilityChanged, _stabilityValue);
+        }
+    }
+
     /// <summary>
-    /// 最多特殊乘客数量
+    /// 最大特殊乘客数量
     /// </summary>
     public int maxSpecialPassengerCount;
+
     /// <summary>
-    /// 最多镜像出现次数
+    /// 面具镜可触发次数
     /// </summary>
     public int maxMirrorOccourence;
+
     /// <summary>
-    /// 游戏是否结束了
+    /// 游戏是否已结束
     /// </summary>
     public bool isGameOver = false;
 
     /// <summary>
-    /// 降低乘客信任值
-    /// 当调用此方法时 乘客信任值降低10点 不低于0
-    /// 踢错乘客时调用此方法
+    /// 扣除乘客信任值
     /// </summary>
     public void SubPassengerTrustValue(int value)
     {
@@ -61,21 +63,35 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
         passengerTrustValue = Mathf.Max(0, passengerTrustValue);
     }
 
-    // Start is called before the first frame update
-    void Start()
+    /// <summary>
+    /// 扣除稳定度
+    /// </summary>
+    public void SubStabilityValue(int value)
     {
+        stabilityValue -= value;
     }
 
-    // Update is called once per frame
+    /// <summary>
+    /// 增加稳定度
+    /// </summary>
+    public void AddStabilityValue(int value)
+    {
+        stabilityValue += value;
+    }
+
+    void Start()
+    {
+        // 初始化稳定度（触发初始UI更新）
+        _stabilityValue = stabilityValue;
+    }
+
     void Update()
     {
-        print(passengerTrustValue);
         if (isGameOver)
             return;
 
         isGameOver = passengerTrustValue <= 0;
 
-        //当乘客信任值为0时 游戏失败
         if (isGameOver)
             EventMgr.Instance.FallIntoAbyss();
     }

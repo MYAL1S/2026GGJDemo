@@ -10,13 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a038d7c58a64374ca4e10128295870a, type: 3}
-  m_Name: WaveData_1
+  m_Name: WaveData_2
   m_EditorClassIdentifier: 
   levelDetails:
-  - {fileID: 11400000, guid: 52496bff4eff9ef45af4fa30f1f2203f, type: 2}
+  - {fileID: 11400000, guid: fa237df04db02364586949374f6fe667, type: 2}
+  - {fileID: 11400000, guid: 6c5a01268cc95984284e04440b55655e, type: 2}
+  - {fileID: 11400000, guid: af1786e0c36c473429961552247865af, type: 2}
   - {fileID: 11400000, guid: dae274b9d63bb3e4ab75e54feb1e4b21, type: 2}
-  - {fileID: 11400000, guid: 890ac8b9e52609f43ae7b8cc28a544e2, type: 2}
   - {fileID: 11400000, guid: 7f23ac925365b02418a27aa3a8106413, type: 2}
-  - {fileID: 11400000, guid: 72d575246411b374b873a09b9ce6cb5f, type: 2}
-  - {fileID: 11400000, guid: 812aa137294cb524ba3d3d8db56493d9, type: 2}
-  createMirrorLevelIndex: 02000000
+  createMirrorLevelIndex: 03000000

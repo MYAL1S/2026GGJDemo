@@ -1,9 +1,9 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Í­¾µÃæ°å
+/// é“œé•œé¢æ¿
 /// </summary>
 public class MirrorPanel : BasePanel
 {
@@ -17,6 +17,10 @@ public class MirrorPanel : BasePanel
     private const float TotalGazeDuration = 10f;
     private const float PsychicRestoreInterval = 3f;
     private float lastRestoreTime = 0f;
+    
+    // â­ é¬¼æ€æ­»ç©å®¶ç›¸å…³
+    private float lastDeathCheckTime = 0f;
+    private bool hasTriggeredDeath = false;
 
     private static bool isShowing = false;
     public static bool IsShowing => isShowing;
@@ -41,7 +45,6 @@ public class MirrorPanel : BasePanel
         ResetGazeState();
     }
 
-    // ? ÖØĞ´ ShowMe£¬µ÷ÓÃ¸¸Àà·½·¨²¢ÉèÖÃ×´Ì¬
     public override void ShowMe()
     {
         base.ShowMe();
@@ -107,16 +110,18 @@ public class MirrorPanel : BasePanel
         CloseMirrorPanel();
     }
 
-    // ? ÖØĞ´ Update£¬±ØĞëµ÷ÓÃ base.Update() À´´¦Àíµ­Èëµ­³ö
     protected override void Update()
     {
-        base.Update();  // ? ¹Ø¼ü£ºµ÷ÓÃ¸¸ÀàµÄ Update ´¦Àíµ­Èëµ­³ö
+        base.Update();
 
-        if (!isGazing) return;
+        if (!isGazing || hasTriggeredDeath) return;
 
         gazeTime += Time.deltaTime;
 
         UpdateProgressBar();
+        
+        // â­ æ£€æŸ¥æ˜¯å¦è¢«é¬¼æ€æ­»
+        CheckGhostKill();
 
         if (gazeTime - lastRestoreTime >= PsychicRestoreInterval)
         {
@@ -131,13 +136,57 @@ public class MirrorPanel : BasePanel
     }
 
     /// <summary>
-    /// ¸üĞÂ½ø¶ÈÌõ¿í¶È£¨´Ó0¿ªÊ¼Ìî³ä£©
+    /// â­ æ£€æŸ¥æ˜¯å¦è¢«é¬¼æ€æ­»
+    /// </summary>
+    private void CheckGhostKill()
+    {
+        if (hasTriggeredDeath) return;
+        
+        float checkInterval = ResourcesMgr.Instance.mirrorDeathCheckInterval;
+        
+        // æ¯éš”ä¸€å®šæ—¶é—´æ£€æŸ¥ä¸€æ¬¡
+        if (gazeTime - lastDeathCheckTime >= checkInterval)
+        {
+            lastDeathCheckTime = gazeTime;
+            
+            float deathChance = ResourcesMgr.Instance.mirrorDeathChance;
+            
+            if (Random.value < deathChance)
+            {
+                OnGhostKill();
+            }
+        }
+    }
+
+    /// <summary>
+    /// â­ è¢«é¬¼æ€æ­»
+    /// </summary>
+    private void OnGhostKill()
+    {
+        hasTriggeredDeath = true;
+        
+        Debug.Log("[MirrorPanel] ğŸ’€ æ³¨è§†é“œé•œæ—¶è¢«é¬¼æ€æ­»ï¼");
+        
+        // åœæ­¢æ³¨è§†
+        StopGazing();
+        
+        // å…³é—­é“œé•œé¢æ¿
+        CloseMirrorPanel();
+        
+        // åœæ­¢ç”µæ¢¯
+        ElevatorMgr.Instance.StopElevator();
+        
+        // è§¦å‘æ¸¸æˆå¤±è´¥
+        EventMgr.Instance.FallIntoAbyss();
+    }
+
+    /// <summary>
+    /// æ›´æ–°è¿›åº¦æ¡ï¼ˆä»0å¼€å§‹å¡«å……ï¼‰
     /// </summary>
     private void UpdateProgressBar()
     {
         if (progressFrontRect == null) return;
 
-        // ? ¼ÆËãÌî³ä±ÈÀı£¨×¢ÊÓÔ½¾Ã£¬½ø¶ÈÌõÔ½Âú£©
         float fillRatio = gazeTime / TotalGazeDuration;
         fillRatio = Mathf.Clamp01(fillRatio);
 
@@ -153,12 +202,12 @@ public class MirrorPanel : BasePanel
 
         int restoreAmount = (int)(playerInfo.maxPsychicPowerValue * 0.3f);
         GameDataMgr.Instance.AddPsychicPower(restoreAmount);
-        Debug.Log($"[MirrorPanel] »Ö¸´ÁË {restoreAmount} µãÁéÄÜ");
+        Debug.Log($"[MirrorPanel] æ¢å¤äº† {restoreAmount} çµèƒ½");
     }
 
     private void OnGazeComplete()
     {
-        Debug.Log("[MirrorPanel] ×¢ÊÓÍê³É");
+        Debug.Log("[MirrorPanel] æ³¨è§†å®Œæˆ");
         StopGazing();
         CloseMirrorPanel();
     }
@@ -170,8 +219,9 @@ public class MirrorPanel : BasePanel
         isGazing = true;
         gazeTime = 0f;
         lastRestoreTime = 0f;
+        lastDeathCheckTime = 0f;  // â­ é‡ç½®æ­»äº¡æ£€æŸ¥æ—¶é—´
+        hasTriggeredDeath = false; // â­ é‡ç½®æ­»äº¡æ ‡è®°
 
-        // ? ¿ªÊ¼Ê±½ø¶ÈÌõ¿í¶ÈÎª0
         if (progressFrontRect != null)
         {
             Vector2 sizeDelta = progressFrontRect.sizeDelta;
@@ -189,7 +239,7 @@ public class MirrorPanel : BasePanel
             MonoMgr.Instance.StartCoroutine(FadeCanvasGroup(cg, 0f, 1f, 1.5f));
         });
 
-        Debug.Log("[MirrorPanel] ¿ªÊ¼×¢ÊÓÍ­¾µ");
+        Debug.Log("[MirrorPanel] å¼€å§‹æ³¨è§†é“œé•œ");
     }
 
     public void StopGazing()
@@ -219,19 +269,20 @@ public class MirrorPanel : BasePanel
             }
         });
 
-        Debug.Log($"[MirrorPanel] Í£Ö¹×¢ÊÓ£¬¹²×¢ÊÓÁË {gazeTime:F1} Ãë");
+        Debug.Log($"[MirrorPanel] åœæ­¢æ³¨è§†ï¼Œå·²æ³¨è§†äº† {gazeTime:F1} ç§’");
     }
 
     /// <summary>
-    /// ÖØÖÃ×¢ÊÓ×´Ì¬£¨½ø¶ÈÌõ¹éÁã£©
+    /// é‡ç½®æ³¨è§†çŠ¶æ€ï¼ˆè¿›åº¦æ¡å½’é›¶ï¼‰
     /// </summary>
     private void ResetGazeState()
     {
         isGazing = false;
         gazeTime = 0f;
         lastRestoreTime = 0f;
+        lastDeathCheckTime = 0f;  // â­ é‡ç½®
+        hasTriggeredDeath = false; // â­ é‡ç½®
 
-        // ? ÖØÖÃÊ±½ø¶ÈÌõ¿í¶ÈÎª0
         if (progressFrontRect != null)
         {
             Vector2 sizeDelta = progressFrontRect.sizeDelta;

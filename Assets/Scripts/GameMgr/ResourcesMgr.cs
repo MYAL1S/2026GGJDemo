@@ -66,6 +66,14 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     [Tooltip("异常事件超时时间（秒）")]
     public int abnormalEventTimeout = 10;
 
+    [Header("铜镜事件配置")]
+    [Tooltip("注视铜镜时被鬼杀死的概率 (0-1)")]
+    [Range(0f, 1f)]
+    public float mirrorDeathChance = 0.1f;
+
+    [Tooltip("铜镜死亡判定间隔时间（秒）")]
+    public float mirrorDeathCheckInterval = 2f;
+
     /// <summary>
     /// 乘客的信任值
     /// </summary>

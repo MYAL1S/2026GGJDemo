@@ -44,6 +44,7 @@ public class GameLevelMgr : BaseSingleton<GameLevelMgr>
     {
         spawnedSpecialCount = 0;
         mirrorOccurenceCount = 0;
+        Debug.Log("[GameLevelMgr] 配额计数已重置");
     }
 
     /// <summary>剩余可用的特殊乘客配额</summary>

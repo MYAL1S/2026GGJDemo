@@ -71,11 +71,13 @@ MonoBehaviour:
   - {x: 300, y: 0, z: 0}
   - {x: 150, y: 0, z: 0}
   - {x: -150, y: 0, z: 0}
-  elevatorMovingTimeMin: 10
-  elevatorMovingTimeMax: 10
+  elevatorMovingTimeMin: 5
+  elevatorMovingTimeMax: 5
   elevatorDockingTime: 15
   elevatorArrivingTime: 3
-  elevatorDepartingTime: 1
+  elevatorDepartingTime: 10
+  floorRandomDisplayDelay: 2
+  floorRandomDisplayInterval: 300
   maxSpecialPassengerCount: 2
   maxMirrorOccourence: 1
   abnormalEventChance: 0.2

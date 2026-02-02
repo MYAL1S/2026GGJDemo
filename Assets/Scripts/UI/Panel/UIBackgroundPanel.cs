@@ -5,48 +5,64 @@ using UnityEngine.UI;
 
 public class UIBackgroundPanel : BasePanel
 {
-    /// <summary>
-    /// 无门背景（覆盖在门之上）
-    /// </summary>
-    private RawImage noDoorBK;
+    private Image doorLeft;
+    private Image doorRight;
 
     public override void Init()
     {
         base.Init();
-
-        // 获取无门背景控件
-        noDoorBK = GetControl<RawImage>("NoDoorBK");
-
-        // 注册电梯门状态事件
+        
+        // 获取左右门
+        doorLeft = GetControl<Image>("DoorLeft");
+        doorRight = GetControl<Image>("DoorRight");
+        
+        // 监听电梯门状态变化
         EventCenter.Instance.AddEventListener<bool>(E_EventType.E_ElevatorDoorStateChanged, OnDoorStateChanged);
-
-        // 初始状态：门关闭，隐藏无门背景
-        SetDoorOpen(false);
     }
 
-    /// <summary>
-    /// 设置门的开关状态
-    /// </summary>
-    /// <param name="isOpen">true=开门，false=关门</param>
-    public void SetDoorOpen(bool isOpen)
+    public override void ShowMe()
     {
-        if (noDoorBK != null)
-        {
-            noDoorBK.gameObject.SetActive(isOpen);
-        }
+        base.ShowMe();
+        
+        // 显示时初始化门为关闭状态（显示门）
+        SetDoorsVisible(true);
     }
 
     /// <summary>
-    /// 门状态变化回调
+    /// 电梯门状态变化回调
     /// </summary>
+    /// <param name="isOpen">true=开门（隐藏门），false=关门（显示门）</param>
     private void OnDoorStateChanged(bool isOpen)
     {
-        SetDoorOpen(isOpen);
+        // 开门时隐藏门，关门时显示门
+        SetDoorsVisible(!isOpen);
+    }
+
+    /// <summary>
+    /// 设置门的可见性
+    /// </summary>
+    private void SetDoorsVisible(bool visible)
+    {
+        if (doorLeft != null)
+            doorLeft.gameObject.SetActive(visible);
+        if (doorRight != null)
+            doorRight.gameObject.SetActive(visible);
+        
+        Debug.Log($"[UIBackgroundPanel] 电梯门: {(visible ? "关闭(显示)" : "开启(隐藏)")}");
     }
 
     public override void HideMe()
     {
+        // 移除事件监听
         EventCenter.Instance.RemoveEventListener<bool>(E_EventType.E_ElevatorDoorStateChanged, OnDoorStateChanged);
         base.HideMe();
+    }
+
+    /// <summary>
+    /// UIBackgroundPanel 不播放出现音效
+    /// </summary>
+    protected override void PlayShowSound()
+    {
+        // 不播放音效
     }
 }

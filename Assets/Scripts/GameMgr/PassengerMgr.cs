@@ -490,4 +490,14 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         int count = passengerList?.Count ?? 0;
         EventCenter.Instance.EventTrigger<int>(E_EventType.E_PassengerCountChanged, count);
     }
+
+    /// <summary>
+    /// 重置乘客管理器（开始新游戏时调用）
+    /// </summary>
+    public void Reset()
+    {
+        ClearAllPassengers();
+        waitingQueue.Clear();
+        Debug.Log("[PassengerMgr] 乘客管理器已重置");
+    }
 }

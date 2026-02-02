@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -16,7 +14,6 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     /// </summary>
     private PlayerInfo playerInfo;
     public PlayerInfo PlayerInfo => playerInfo;
-
 
     /// <summary>
     /// 信任度
@@ -37,7 +34,7 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     /// </summary>
     public int MaxTrustValue { get; private set; } = 6;
 
-    // 灵能过低提示音
+    // 灵能告警相关
     private const int LowPsychicThreshold = 2;
     private const string LowPsychicSoundPath = "Music/26GGJsound/percentlow";
     private AudioSource lowPsychicLoopSource;
@@ -45,9 +42,35 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
 
     private GameDataMgr()
     {
-        playerInfo = JsonMgr.Instance.LoadData<PlayerInfo>("PlayerInfo");
+        // 从本地读取设置数据（设置数据需要持久化）
         settingInfo = JsonMgr.Instance.LoadData<SettingInfo>("Settings");
+        
+        // 读取玩家基础数据（如最大灵能值等配置）
+        playerInfo = JsonMgr.Instance.LoadData<PlayerInfo>("PlayerInfo");
+        
         _trustValue = MaxTrustValue;
+    }
+
+    /// <summary>
+    /// ? 重置游戏数据（每次开始新游戏时调用）
+    /// </summary>
+    public void ResetGameData()
+    {
+        // 重置信任度
+        _trustValue = MaxTrustValue;
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_StabilityChanged, _trustValue);
+
+        // 重置灵能值
+        if (playerInfo != null)
+        {
+            playerInfo.nowPsychicPowerValue = playerInfo.maxPsychicPowerValue;
+            EventCenter.Instance.EventTrigger<int>(E_EventType.E_PsychicPowerChanged, playerInfo.nowPsychicPowerValue);
+        }
+
+        // 停止灵能告警音效
+        StopLowPsychicSound();
+
+        Debug.Log($"[GameDataMgr] 游戏数据已重置 - 信任度:{_trustValue}, 灵能:{playerInfo?.nowPsychicPowerValue}");
     }
 
     public void InitTrustValue(int maxValue)
@@ -69,7 +92,7 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
 
     public bool IsTrustDepleted => _trustValue <= 0;
 
-    #region 灵能值操作
+    #region 灵能值相关
 
     public void SetPsychicPower(int value)
     {

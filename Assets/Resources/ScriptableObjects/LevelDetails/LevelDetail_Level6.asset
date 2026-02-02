@@ -23,4 +23,4 @@ MonoBehaviour:
   ghostCount: 5
   dockingTime: 10
   level: 6
-  specialPassengerCount: 0
+  specialPassengerCount: 3

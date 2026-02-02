@@ -5,13 +5,35 @@ using UnityEngine.UI;
 
 public class OptionsPanel : BasePanel
 {
+    private float alphaSpeed = 5f;
+    private bool isPanelShowing = false;
+    private CanvasGroup panelCanvasGroup;
+    private bool isFadingOut = false;
+
+    /// <summary>
+    /// OptionsPanel 排序层级
+    /// </summary>
+    private const int PANEL_SORTING_ORDER = 300;
+    private const int MASK_SORTING_ORDER = 250;
+
+    // 添加字段记录是否从游戏中打开
+    private bool openedFromGame = false;
+
     /// <summary>
     /// 初始化面板
     /// </summary>
     public override void Init()
     {
         base.Init();
-        //从数据管理器中获取当前的设置数据并同步到UI控件上
+        
+        panelCanvasGroup = GetComponent<CanvasGroup>();
+        if (panelCanvasGroup == null)
+            panelCanvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+        SetupCanvasSorting();
+        SetupBlockingMask();
+
+        // 加载当前设置到UI控件
         GetControl<Dropdown>("DropDownResolution").value = GameDataMgr.Instance.SettingInfo.resolutionType;
         GetControl<Dropdown>("DropDownVsync").value = GameDataMgr.Instance.SettingInfo.isVsyncOpen ? 0 : 1;
         GetControl<Dropdown>("DropDownFullscreen").value = GameDataMgr.Instance.SettingInfo.isFullScreen ? 0 : 1;
@@ -19,9 +41,104 @@ public class OptionsPanel : BasePanel
         GetControl<Slider>("SliderMusicVolume").value = GameDataMgr.Instance.SettingInfo.musicVolume;
         GetControl<Slider>("SliderFXVolume").value = GameDataMgr.Instance.SettingInfo.fxVolume;
     }
+
+    private void SetupCanvasSorting()
+    {
+        Canvas canvas = GetComponent<Canvas>();
+        if (canvas == null)
+            canvas = gameObject.AddComponent<Canvas>();
+        
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = PANEL_SORTING_ORDER;
+
+        if (GetComponent<GraphicRaycaster>() == null)
+            gameObject.AddComponent<GraphicRaycaster>();
+    }
+
+    private void SetupBlockingMask()
+    {
+        Transform existingMask = transform.Find("BlockingMask");
+        if (existingMask != null)
+        {
+            Canvas existingCanvas = existingMask.GetComponent<Canvas>();
+            if (existingCanvas == null)
+            {
+                existingCanvas = existingMask.gameObject.AddComponent<Canvas>();
+                existingCanvas.overrideSorting = true;
+                existingCanvas.sortingOrder = MASK_SORTING_ORDER;
+                existingMask.gameObject.AddComponent<GraphicRaycaster>();
+            }
+            return;
+        }
+
+        GameObject maskObj = new GameObject("BlockingMask");
+        maskObj.transform.SetParent(transform, false);
+        maskObj.transform.SetAsFirstSibling();
+
+        RectTransform maskRect = maskObj.AddComponent<RectTransform>();
+        maskRect.anchorMin = Vector2.zero;
+        maskRect.anchorMax = Vector2.one;
+        maskRect.offsetMin = Vector2.zero;
+        maskRect.offsetMax = Vector2.zero;
+
+        Canvas maskCanvas = maskObj.AddComponent<Canvas>();
+        maskCanvas.overrideSorting = true;
+        maskCanvas.sortingOrder = MASK_SORTING_ORDER;
+        maskObj.AddComponent<GraphicRaycaster>();
+
+        Image maskImage = maskObj.AddComponent<Image>();
+        maskImage.color = new Color(0, 0, 0, 0.5f);
+        maskImage.raycastTarget = true;
+    }
+
     protected override Selectable GetDefaultSelectable()
     {
         return GetControl<Dropdown>("DropDownResolution");
+    }
+
+    public override void ShowMe()
+    {
+        isPanelShowing = true;
+        isFadingOut = false;
+        panelCanvasGroup.alpha = 0;
+        
+        // ? 检查是否从游戏中打开
+        openedFromGame = ElevatorMgr.Instance.CurrentState != E_ElevatorState.Stopped || 
+                         UIMgr.Instance.IsPanelShowing<GamePanel>();
+        
+        // ? 暂停游戏
+        Time.timeScale = 0f;
+    }
+
+    public override void HideMe()
+    {
+        isPanelShowing = false;
+        isFadingOut = true;
+    }
+
+    protected override void Update()
+    {
+        // 淡入
+        if (isPanelShowing && panelCanvasGroup.alpha < 1)
+        {
+            panelCanvasGroup.alpha += alphaSpeed * Time.unscaledDeltaTime;
+            if (panelCanvasGroup.alpha >= 1)
+                panelCanvasGroup.alpha = 1;
+        }
+        // 淡出
+        else if (isFadingOut && panelCanvasGroup.alpha > 0)
+        {
+            panelCanvasGroup.alpha -= alphaSpeed * Time.unscaledDeltaTime;
+            if (panelCanvasGroup.alpha <= 0)
+            {
+                panelCanvasGroup.alpha = 0;
+                isFadingOut = false;
+                
+                // ? 恢复游戏
+                Time.timeScale = 1f;
+                UIMgr.Instance.HidePanel<OptionsPanel>();
+            }
+        }
     }
 
     protected override void OnDropDownValueChanged(string name, int value)
@@ -30,17 +147,13 @@ public class OptionsPanel : BasePanel
         switch (name)
         {
             case "DropDownResolution":
-                // 立即预览分辨率（不持久化，持久化在点击保存时）
                 ApplyResolutionByIndex(value);
                 break;
             case "DropDownVsync":
-                // 立即应用垂直同步设置（0 表示 开启，1 表示 关闭）
                 QualitySettings.vSyncCount = (value == 0) ? 1 : 0;
-                break ;
+                break;
             case "DropDownFullscreen":
                 SetFullScreen(value);
-                break;
-            default:
                 break;
         }
     }
@@ -51,7 +164,6 @@ public class OptionsPanel : BasePanel
         switch (name)
         {
             case "SliderMasterVolume":
-                //当主音量变化时 同步更新背景音乐和音效的音量
                 MusicMgr.Instance.SetMasterValue(value);
                 break;
             case "SliderMusicVolume":
@@ -59,8 +171,6 @@ public class OptionsPanel : BasePanel
                 break;
             case "SliderFXVolume":
                 MusicMgr.Instance.SetSoundValue(value);
-                break;
-            default:
                 break;
         }
     }
@@ -71,10 +181,10 @@ public class OptionsPanel : BasePanel
         switch (name)
         {
             case "BtnSave":
-                //保存设置数据
+                // 保存设置数据
                 GameDataMgr.Instance.SettingInfo.resolutionType = GetControl<Dropdown>("DropDownResolution").value;
-                GameDataMgr.Instance.SettingInfo.isVsyncOpen = GetControl<Dropdown>("DropDownVsync").value == 0 ? true : false;
-                GameDataMgr.Instance.SettingInfo.isFullScreen = GetControl<Dropdown>("DropDownFullscreen").value == 0 ? true : false;
+                GameDataMgr.Instance.SettingInfo.isVsyncOpen = GetControl<Dropdown>("DropDownVsync").value == 0;
+                GameDataMgr.Instance.SettingInfo.isFullScreen = GetControl<Dropdown>("DropDownFullscreen").value == 0;
                 GameDataMgr.Instance.SettingInfo.masterVolume = GetControl<Slider>("SliderMasterVolume").value;
                 GameDataMgr.Instance.SettingInfo.musicVolume = GetControl<Slider>("SliderMusicVolume").value;
                 GameDataMgr.Instance.SettingInfo.fxVolume = GetControl<Slider>("SliderFXVolume").value;
@@ -83,22 +193,23 @@ public class OptionsPanel : BasePanel
                 break;
             case "BtnExit":
                 SettingsApplier.ApplyAll(GameDataMgr.Instance.SettingInfo);
-                //关闭面板
-                UIMgr.Instance.HidePanel<OptionsPanel>();
-                //返回主菜单面板
-                UIMgr.Instance.ShowPanel<MainMenuPanel>();
-                break;
-            default:
+                HideMe();
+                
+                // ? 根据来源返回不同面板
+                if (openedFromGame)
+                {
+                    // 从游戏中打开，返回游戏
+                    // 不需要显示其他面板，GamePanel 还在
+                }
+                else
+                {
+                    // 从主菜单打开，返回主菜单
+                    UIMgr.Instance.ShowPanel<MainMenuPanel>();
+                }
                 break;
         }
     }
 
-    /// <summary>
-    /// 根据下拉索引立即应用分辨率（用于预览）
-    /// 下拉索引与Saved数据保持一致：0->1920x1080, 1->2560x1440, 2->1600x900, 3->1280x720
-    /// 注意：真正保存由 BtnSave 操作完成
-    /// </summary>
-    /// <param name="index">下拉索引</param>
     private void ApplyResolutionByIndex(int index)
     {
         bool fullscreen = GetControl<Dropdown>("DropDownFullscreen").value == 0;
@@ -115,4 +226,11 @@ public class OptionsPanel : BasePanel
         SettingsApplier.ApplyResolution(currentResIndex, fullscreen);
     }
 
+    /// <summary>
+    /// 播放面板出现音效
+    /// </summary>
+    protected override void PlayShowSound()
+    {
+        MusicMgr.Instance.PlaySound("Music/26GGJsound/window_appear", false);
+    }
 }

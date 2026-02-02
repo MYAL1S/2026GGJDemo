@@ -59,4 +59,12 @@ public enum E_EventType
     /// 特殊乘客能力耗尽
     /// </summary>
     E_SpecialPassengerExpired,
+    /// <summary>
+    /// 电梯门状态变化事件-传入bool，true为开门，false为关门
+    /// </summary>
+    E_ElevatorDoorStateChanged,
+    /// <summary>
+    /// 异常状态变化事件-传入bool，true为进入异常，false为恢复正常
+    /// </summary>
+    E_AbnormalStateChanged,
 }

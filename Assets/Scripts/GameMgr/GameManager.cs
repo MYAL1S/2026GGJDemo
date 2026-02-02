@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 游戏管理器 - 负责初始化所有系统
+/// 游戏管理器 - 负责初始化游戏系统
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -16,6 +16,6 @@ public class GameManager : MonoBehaviour
         // 初始化鬼魂渲染系统
         GhostRenderSystem.Instance.Setup();
 
-        Debug.Log("[GameManager] 所有系统初始化完成");
+        Debug.Log("[GameManager] 各个系统初始化完成");
     }
 }

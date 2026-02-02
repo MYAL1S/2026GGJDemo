@@ -116,9 +116,6 @@ public class BellItem : DraggableItem
 
     private void UpdatePassengerSelection(Vector2 screenPosition)
     {
-        if (mainCamera == null)
-            mainCamera = Camera.main;
-
         var passengerList = PassengerMgr.Instance.passengerList;
         if (passengerList == null)
             return;
@@ -131,7 +128,17 @@ public class BellItem : DraggableItem
             if (passenger == null)
                 continue;
 
-            Vector3 passengerScreenPos = mainCamera.WorldToScreenPoint(passenger.transform.position);
+            // ? 使用 RectTransform 的屏幕坐标
+            RectTransform passengerRect = passenger.GetComponent<RectTransform>();
+            if (passengerRect == null)
+                continue;
+
+            // 将 UI 元素的位置转换为屏幕坐标
+            Vector2 passengerScreenPos = RectTransformUtility.WorldToScreenPoint(
+                parentCanvas.worldCamera, 
+                passengerRect.position
+            );
+
             float screenDistance = Vector2.Distance(screenPosition, passengerScreenPos);
 
             if (screenDistance <= detectionRadius && screenDistance < minDistance)
@@ -150,7 +157,7 @@ public class BellItem : DraggableItem
             if (currentSelectedPassenger != null)
             {
                 currentSelectedPassenger.SetHighlight(true);
-                Debug.Log($"[BellItem] 选中乘客: {currentSelectedPassenger.name}");
+                Debug.Log($"[BellItem] 选中乘客: {currentSelectedPassenger.name}, 距离: {minDistance}");
             }
         }
     }
@@ -224,7 +231,6 @@ public class BellItem : DraggableItem
 
     private void OnBellHitPassenger(Passenger passenger)
     {
-        // 使用 GameDataMgr 的方法消耗灵能值（会自动触发UI更新事件）
         if (!GameDataMgr.Instance.ConsumePsychicPower(psychicCost))
         {
             Debug.Log("[BellItem] 灵能值不足");
@@ -233,23 +239,19 @@ public class BellItem : DraggableItem
 
         if (passenger.passengerInfo.isGhost)
         {
-            Debug.Log("[BellItem] 检测到鬼魂，触发消散");
+            Debug.Log("[BellItem] 检测到鬼魂，将其驱散");
             OnGhostDispelled(passenger);
         }
         else
         {
-            Debug.Log("[BellItem] 检测到普通乘客，不做处理");
+            Debug.Log("[BellItem] 检测到普通乘客，无事发生");
         }
     }
 
     private void OnGhostDispelled(Passenger ghost)
     {
         MusicMgr.Instance.PlaySound("Music/26GGJsound/ghost_disappear", false);
-        PassengerMgr.Instance.passengerList.Remove(ghost);
-
-        if (ghost != null && ghost.gameObject != null)
-            GameObject.Destroy(ghost.gameObject);
-
-        Debug.Log("[BellItem] 鬼魂已消散");
+        PassengerMgr.Instance.DispelGhost(ghost);
+        Debug.Log("[BellItem] 鬼魂已被驱散");
     }
 }

@@ -54,6 +54,9 @@ MonoBehaviour:
   ghostFeatureRenderer: {fileID: 5092326626693145580}
   passengerInfo: {fileID: 0}
   highlightColor: {r: 1, g: 1, b: 0.5, a: 1}
+  psychicRestoreInterval: 2
+  maxRestoreDuration: 10
+  psychicRestoreAmount: 1
 --- !u!1 &6842661344441396266
 GameObject:
   m_ObjectHideFlags: 0

@@ -2,38 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 事件管理器
-/// </summary>
 public class EventMgr : BaseSingleton<EventMgr>
 {
-    /// <summary>
-    /// 观看铜镜的定时器
-    /// </summary>
     private int timerID;
     private Coroutine fogCoroutine;
-    /// <summary>
-    /// 雾气面板
-    /// </summary>
     private FogPanel fogPanel;
-    /// <summary>
-    /// 异常事件定时
-    /// </summary>
     private int abnormalTimerId;
-    /// <summary>
-    /// 是否在异常状态
-    /// </summary>
     private bool isUnnormalState;
     public bool IsInUnnormalState => isUnnormalState;
 
-    /// <summary>
-    /// 异常事件超时时间（毫秒）
-    /// </summary>
-    private const int AbnormalTimeout = 10000;
+    private int abnormalCountdownRemaining;
 
-    /// <summary>
-    /// 开始观看铜镜（灵能恢复，鬼魂靠近）
-    /// </summary>
     public void StartWatchMirror()
     {
         if (timerID != 0)
@@ -67,9 +46,6 @@ public class EventMgr : BaseSingleton<EventMgr>
         });
     }
 
-    /// <summary>
-    /// 停止/取消观看铜镜
-    /// </summary>
     public void StopWatchMirror()
     {
         if (timerID != 0)
@@ -84,9 +60,6 @@ public class EventMgr : BaseSingleton<EventMgr>
                      0f, 1.0f, hideAfterFade: true);
     }
 
-    /// <summary>
-    /// 雾气面板淡入淡出
-    /// </summary>
     private void StartFogFade(float from, float to, float duration, bool hideAfterFade)
     {
         if (fogCoroutine != null)
@@ -124,7 +97,7 @@ public class EventMgr : BaseSingleton<EventMgr>
     }
 
     /// <summary>
-    /// 异常事件触发
+    /// 触发异常事件（不暂停电梯流程）
     /// </summary>
     public void UnnormalEvent()
     {
@@ -133,49 +106,38 @@ public class EventMgr : BaseSingleton<EventMgr>
 
         isUnnormalState = true;
 
-        // 楼层显示异常
-        ElevatorMgr.Instance.ChangeLevelUI(-18);
+        Debug.Log("[EventMgr] 异常事件触发，需要玩家处理");
 
-        Debug.Log("[EventMgr] 异常事件触发！需要晃动铃铛解决");
-
-        // 触发异常事件开始事件（通知电梯暂停）
+        // ? 触发异常事件开始（只改变状态和音效，不暂停电梯）
         EventCenter.Instance.EventTrigger(E_EventType.E_UnnormalEventStart);
 
-        // 超时未解决则坠入深渊
-        abnormalTimerId = TimerMgr.Instance.CreateTimer(false, AbnormalTimeout, () =>
+        // 设置异常事件超时
+        int timeout = ResourcesMgr.Instance.abnormalEventTimeout * 1000;
+        abnormalCountdownRemaining = timeout;
+
+        // 超时未处理则坠入深渊
+        abnormalTimerId = TimerMgr.Instance.CreateTimer(false, timeout, () =>
         {
             if (!isUnnormalState) return;
             FallIntoAbyss();
         });
     }
 
-    /// <summary>
-    /// 使用镇邪面具解决异常（保留兼容旧代码）
-    /// </summary>
     public void ResolveUnnormalBySubdueMask()
     {
         ResolveUnnormal();
     }
 
-    /// <summary>
-    /// 使用铃铛解决异常事件
-    /// </summary>
     public void ResolveUnnormalByBell()
     {
         if (!isUnnormalState)
             return;
 
         Debug.Log("[EventMgr] 铃铛成功解决异常事件");
-
-        // 播放解决音效
         MusicMgr.Instance.PlaySound("Music/26GGJsound/bell_ring", false);
-
         ResolveUnnormal();
     }
 
-    /// <summary>
-    /// 解决异常事件的通用方法
-    /// </summary>
     private void ResolveUnnormal()
     {
         if (!isUnnormalState)
@@ -183,7 +145,6 @@ public class EventMgr : BaseSingleton<EventMgr>
 
         isUnnormalState = false;
 
-        // 取消超时定时器
         if (abnormalTimerId != 0)
         {
             TimerMgr.Instance.RemoveTimer(abnormalTimerId);
@@ -192,18 +153,14 @@ public class EventMgr : BaseSingleton<EventMgr>
 
         Debug.Log("[EventMgr] 异常事件已解决");
 
-        // 触发异常事件解决事件（通知电梯继续）
+        // ? 触发异常事件解决
         EventCenter.Instance.EventTrigger(E_EventType.E_UnnormalEventResolved);
     }
 
-    /// <summary>
-    /// 坠入深渊 游戏失败
-    /// </summary>
     public void FallIntoAbyss()
     {
         isUnnormalState = false;
 
-        // 取消超时定时器
         if (abnormalTimerId != 0)
         {
             TimerMgr.Instance.RemoveTimer(abnormalTimerId);
@@ -212,7 +169,6 @@ public class EventMgr : BaseSingleton<EventMgr>
 
         Debug.Log("[EventMgr] 坠入深渊，游戏失败");
 
-        // 停止电梯
         ElevatorMgr.Instance.StopElevator();
 
         UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, (panel) =>

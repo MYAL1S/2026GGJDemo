@@ -152,6 +152,17 @@ public abstract class BasePanel : MonoBehaviour
         isShow = true;
         canvasGroup.alpha = 0;
         SetDefaultSelection();
+        
+        // ? 播放面板出现音效（默认不播放，子类可重写）
+        PlayShowSound();
+    }
+
+    /// <summary>
+    /// 播放面板显示音效（默认不播放，子类可重写来启用）
+    /// </summary>
+    protected virtual void PlayShowSound()
+    {
+        // 默认不播放音效
     }
 
     /// <summary>

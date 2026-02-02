@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 用于记录游戏中各种资源的管理器
+/// 用于记录游戏中各类资源的管理器
 /// </summary>
 public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
 {
@@ -19,13 +19,52 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
 
     public List<WaveDetailSO> waveSOList = new List<WaveDetailSO>();
 
+    [Header("全局点位配置")]
+    [Tooltip("乘客生成点位（全局通用）")]
+    public List<Vector3> globalPassengerSpawnPoints = new List<Vector3>();
+
+    [Header("电梯时间配置")]
+    [Tooltip("电梯运行最短时间（秒）")]
+    public int elevatorMovingTimeMin = 5;
+    
+    [Tooltip("电梯运行最长时间（秒）")]
+    public int elevatorMovingTimeMax = 10;
+    
+    [Tooltip("电梯停靠时间（秒）")]
+    public int elevatorDockingTime = 15;
+    
+    [Tooltip("电梯到达动画时间（秒）")]
+    public int elevatorArrivingTime = 3;
+    
+    [Tooltip("电梯离开动画时间（秒）")]
+    public int elevatorDepartingTime = 1;
+
+    [Header("游戏配额")]
+    /// <summary>
+    /// 特殊乘客最大数量
+    /// </summary>
+    public int maxSpecialPassengerCount;
+
+    /// <summary>
+    /// 铜镜最大触发次数
+    /// </summary>
+    public int maxMirrorOccourence;
+
+    [Header("异常事件配置")]
+    [Tooltip("异常事件触发概率 (0-1)")]
+    [Range(0f, 1f)]
+    public float abnormalEventChance = 0.2f;
+    
+    [Tooltip("异常事件超时时间（秒）")]
+    public int abnormalEventTimeout = 10;
+
     /// <summary>
     /// 乘客的信任值
     /// </summary>
     public int passengerTrustValue;
 
     /// <summary>
-    /// 稳定度值
+    /// 稳定性值
     /// </summary>
     private int _stabilityValue;
     public int stabilityValue
@@ -34,46 +73,26 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
         set
         {
             _stabilityValue = Mathf.Max(0, value);
-            // 触发稳定度变化事件
             EventCenter.Instance.EventTrigger<int>(E_EventType.E_StabilityChanged, _stabilityValue);
         }
     }
-
-    /// <summary>
-    /// 最大特殊乘客数量
-    /// </summary>
-    public int maxSpecialPassengerCount;
-
-    /// <summary>
-    /// 面具镜可触发次数
-    /// </summary>
-    public int maxMirrorOccourence;
 
     /// <summary>
     /// 游戏是否已结束
     /// </summary>
     public bool isGameOver = false;
 
-    /// <summary>
-    /// 扣除乘客信任值
-    /// </summary>
     public void SubPassengerTrustValue(int value)
     {
         passengerTrustValue -= value;
         passengerTrustValue = Mathf.Max(0, passengerTrustValue);
     }
 
-    /// <summary>
-    /// 扣除稳定度
-    /// </summary>
     public void SubStabilityValue(int value)
     {
         stabilityValue -= value;
     }
 
-    /// <summary>
-    /// 增加稳定度
-    /// </summary>
     public void AddStabilityValue(int value)
     {
         stabilityValue += value;
@@ -81,7 +100,6 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
 
     void Start()
     {
-        // 初始化稳定度（触发初始UI更新）
         _stabilityValue = stabilityValue;
     }
 

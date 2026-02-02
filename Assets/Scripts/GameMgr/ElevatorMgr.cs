@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// 电梯状态枚举
-/// </summary>
 public enum E_ElevatorState
 {
     Moving,
@@ -15,9 +12,6 @@ public enum E_ElevatorState
     Abnormal
 }
 
-/// <summary>
-/// 电梯管理器
-/// </summary>
 public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 {
     private E_ElevatorState currentElevatorState = E_ElevatorState.Stopped;
@@ -33,30 +27,27 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     private int currentLevelIndex;
     private bool pendingMirrorEvent;
 
-    private E_ElevatorState stateBeforeAbnormal;
-
-    /// <summary>
-    /// 当前活动的定时器ID
-    /// </summary>
     private int activeTimerId = 0;
 
     private int previousLevel = 0;
     private int currentLevel = 0;
     private int countdownRemaining;
 
-    /// <summary>
-    /// 电梯是否正在运行
-    /// </summary>
     private bool isRunning = false;
+
+    /// <summary>
+    /// 是否处于异常状态（不影响电梯流程，只影响音效和UI）
+    /// </summary>
+    private bool isAbnormalState = false;
+    public bool IsAbnormalState => isAbnormalState;
 
     public bool CanUseMask =>
         currentElevatorState == E_ElevatorState.Moving ||
         currentElevatorState == E_ElevatorState.Arriving ||
         currentElevatorState == E_ElevatorState.Departing ||
-        currentElevatorState == E_ElevatorState.Abnormal;
+        isAbnormalState;
 
     public bool CanInteractPassengers => currentElevatorState == E_ElevatorState.Stopped;
-    public bool IsInAbnormalState => currentElevatorState == E_ElevatorState.Abnormal;
 
     /// <summary>
     /// 启动电梯
@@ -70,29 +61,28 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         }
 
         isRunning = true;
+        isAbnormalState = false;
 
-        // 重置本局的配额计数
         GameLevelMgr.Instance.ResetRuntimeCounters();
 
-        // 重置波数和关卡
         waveNum = 0;
         levelNum = 0;
         previousLevel = 0;
         currentLevel = 0;
 
+        // ? 监听异常事件
         EventCenter.Instance.AddEventListener(E_EventType.E_UnnormalEventStart, OnUnnormalEventStart);
         EventCenter.Instance.AddEventListener(E_EventType.E_UnnormalEventResolved, OnUnnormalEventResolved);
 
-        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience");
+        // ? 播放正常背景音乐
+       // MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience_norml");
+        
         MonoMgr.Instance.AddFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
         MonoMgr.Instance.AddUpdateListener(UpdateCountdown);
 
         EnterMovingState();
     }
 
-    /// <summary>
-    /// 清除当前活动的定时器
-    /// </summary>
     private void ClearActiveTimer()
     {
         if (activeTimerId != 0)
@@ -103,19 +93,49 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     }
 
     /// <summary>
-    /// 电梯进入移动状态
+    /// 异常事件开始（不暂停电梯，只改变状态）
     /// </summary>
+    private void OnUnnormalEventStart()
+    {
+        Debug.Log("[ElevatorMgr] 进入异常状态");
+        isAbnormalState = true;
+
+        // ? 切换为异常背景音乐
+        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_amb_abnormal");
+
+        // ? 通知UI更新（时间文本变红）
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_AbnormalStateChanged, true);
+    }
+
+    /// <summary>
+    /// 异常事件解决
+    /// </summary>
+    private void OnUnnormalEventResolved()
+    {
+        Debug.Log("[ElevatorMgr] 异常状态结束");
+        isAbnormalState = false;
+
+        // ? 恢复正常背景音乐
+        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience_normal");
+
+        // ? 通知UI更新（时间文本恢复）
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_AbnormalStateChanged, false);
+    }
+
     public void EnterMovingState()
     {
         if (!isRunning) return;
 
-        // 清除之前的定时器
         ClearActiveTimer();
 
         currentElevatorState = E_ElevatorState.Moving;
         Debug.Log("[ElevatorMgr] 电梯开始运行...");
 
-        int movingDuration = Random.Range(5, 10) * 1000;
+        var config = ResourcesMgr.Instance;
+        int minTime = config.elevatorMovingTimeMin * 1000;
+        int maxTime = config.elevatorMovingTimeMax * 1000;
+        int movingDuration = Random.Range(minTime, maxTime + 1);
+
         StartCountdown(movingDuration);
 
         activeTimerId = TimerMgr.Instance.CreateTimer(false, movingDuration, () =>
@@ -125,55 +145,26 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
             if (!isRunning) return;
 
-            // 20% 概率触发异常事件
-            bool triggerAbnormal = Random.value < 0.2f;
-            if (triggerAbnormal)
+            // ? 触发异常事件（不影响流程，继续进入到达状态）
+            bool triggerAbnormal = Random.value < config.abnormalEventChance;
+            if (triggerAbnormal && !isAbnormalState)
             {
                 EventMgr.Instance.UnnormalEvent();
-                return;
             }
 
             EnterArrivingState();
         });
     }
 
-    private void OnUnnormalEventStart()
-    {
-        Debug.Log("[ElevatorMgr] 异常事件开始，电梯进入异常状态");
-        stateBeforeAbnormal = currentElevatorState;
-        currentElevatorState = E_ElevatorState.Abnormal;
-
-        // 停止倒计时
-        StopCountdown();
-
-        // 清除当前定时器
-        ClearActiveTimer();
-    }
-
-    private void OnUnnormalEventResolved()
-    {
-        Debug.Log("[ElevatorMgr] 异常事件已解决，电梯恢复运行");
-        
-        if (!isRunning) return;
-
-        // 异常解决后进入到达状态
-        EnterArrivingState();
-    }
-
-    /// <summary>
-    /// 电梯进入到达状态
-    /// </summary>
     public void EnterArrivingState()
     {
         if (!isRunning) return;
 
-        // 清除之前的定时器
         ClearActiveTimer();
 
         currentElevatorState = E_ElevatorState.Arriving;
         Debug.Log("[ElevatorMgr] 电梯即将到达...");
 
-        // 选波
         if (ResourcesMgr.Instance.waveSOList == null || ResourcesMgr.Instance.waveSOList.Count == 0)
         {
             Debug.LogError("[ElevatorMgr] waveSOList 为空!");
@@ -188,7 +179,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
             currentWave = ResourcesMgr.Instance.waveSOList[waveNum];
         }
 
-        // 选层
         currentLevelIndex = levelNum;
         currentLevelDetail = currentWave.levelDetails[currentLevelIndex];
         GameLevelMgr.Instance.currentLevelDetail = currentLevelDetail;
@@ -197,66 +187,68 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         pendingMirrorEvent = currentWave.createMirrorLevelIndex != null &&
                              currentWave.createMirrorLevelIndex.Contains(currentLevelIndex);
 
-        // 保存上一楼层，更新当前楼层
         previousLevel = currentLevel;
         currentLevel = currentLevelDetail.level;
 
-        // 判断电梯方向并触发事件
         bool isGoingUp = currentLevel > previousLevel;
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp);
         Debug.Log($"[ElevatorMgr] 电梯方向: {(isGoingUp ? "上升" : "下降")} ({previousLevel} -> {currentLevel})");
 
-        // 开始到达状态倒计时（3秒）
-        StartCountdown(3000);
+        int arrivingDuration = ResourcesMgr.Instance.elevatorArrivingTime * 1000;
+        StartCountdown(arrivingDuration);
 
-        activeTimerId = TimerMgr.Instance.CreateTimer(false, 3000, () =>
+        activeTimerId = TimerMgr.Instance.CreateTimer(false, arrivingDuration, () =>
         {
             activeTimerId = 0;
             StopCountdown();
 
             if (!isRunning) return;
 
-            MusicMgr.Instance.PlaySound("Music/26GGJsound/elevator_beep", false);
+            // ? 根据异常状态播放不同音效
+            string beepSound = isAbnormalState 
+                ? "Music/26GGJsound/elevator_beep_abnormal" 
+                : "Music/26GGJsound/elevator_beep";
+            MusicMgr.Instance.PlaySound(beepSound, false);
+
             ChangeLevelUI(currentLevelDetail.level);
             EnterStoppedState();
         }, 400,
         () =>
         {
-            // 楼层数字滚动效果
             if (isRunning)
                 ChangeLevelUI(Random.Range(2, 18));
         });
     }
 
-    /// <summary>
-    /// 电梯进入停靠状态
-    /// </summary>
     public void EnterStoppedState()
     {
         if (!isRunning) return;
 
-        // 清除之前的定时器
         ClearActiveTimer();
 
         currentElevatorState = E_ElevatorState.Stopped;
         Debug.Log("[ElevatorMgr] 电梯已停靠");
 
-        MusicMgr.Instance.PlaySound("Music/26GGJsound/elevator_dooropen", false);
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, true);
+
+        // ? 根据异常状态播放不同开门音效
+        string doorOpenSound = isAbnormalState 
+            ? "Music/26GGJsound/elevator_dooropen_abnormal" 
+            : "Music/26GGJsound/elevator_dooropen";
+        MusicMgr.Instance.PlaySound(doorOpenSound, false);
+
         PassengerMgr.Instance.SpawnWave();
 
         bool canTriggerMirror = pendingMirrorEvent && GameLevelMgr.Instance.TryConsumeMirrorOccurence();
-        UIMgr.Instance.GetPanel<GamePanel>(panel =>
+        if (canTriggerMirror)
         {
-            if (panel == null) return;
-            if (canTriggerMirror)
-                panel.ShowMirrorUI();
-            else
-                panel.HideMirrorUI();
-        });
+            UIMgr.Instance.ShowPanel<MirrorPanel>(E_UILayer.Top);
+            Debug.Log("[ElevatorMgr] 触发铜镜事件");
+        }
         pendingMirrorEvent = false;
 
-        // 开始停靠状态倒计时
-        int dockingDuration = GameLevelMgr.Instance.currentLevelDetail.dockingTime * 1000;
+        int dockingDuration = ResourcesMgr.Instance.elevatorDockingTime * 1000;
         StartCountdown(dockingDuration);
 
         activeTimerId = TimerMgr.Instance.CreateTimer(false, dockingDuration, () =>
@@ -270,22 +262,27 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         });
     }
 
-    /// <summary>
-    /// 电梯进入离开状态
-    /// </summary>
     public void EnterDepartingState()
     {
         if (!isRunning) return;
 
-        // 清除之前的定时器
         ClearActiveTimer();
 
         currentElevatorState = E_ElevatorState.Departing;
         Debug.Log("[ElevatorMgr] 电梯正在离开...");
 
-        MusicMgr.Instance.PlaySound("Music/26GGJsound/elevator_doorclose", false);
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, false);
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
 
-        activeTimerId = TimerMgr.Instance.CreateTimer(false, 1000, () =>
+        // ? 根据异常状态播放不同关门音效
+        string doorCloseSound = isAbnormalState 
+            ? "Music/26GGJsound/elevator_doorclose_abnormal" 
+            : "Music/26GGJsound/elevator_doorclose";
+        MusicMgr.Instance.PlaySound(doorCloseSound, false);
+
+        int departingDuration = ResourcesMgr.Instance.elevatorDepartingTime * 1000;
+
+        activeTimerId = TimerMgr.Instance.CreateTimer(false, departingDuration, () =>
         {
             activeTimerId = 0;
 
@@ -293,7 +290,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
             CheckResults();
 
-            // 如果游戏未结束，继续下一轮
             if (isRunning)
                 EnterMovingState();
         });
@@ -336,34 +332,64 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
             txtFloor.text = level.ToString();
     }
 
-    /// <summary>
-    /// 检查本层结果
-    /// </summary>
     private void CheckResults()
     {
-        int ghostCount = 0;
         var list = PassengerMgr.Instance.passengerList;
+        int totalSpawnPoints = ResourcesMgr.Instance.globalPassengerSpawnPoints.Count;
+        
+        // 统计当前乘客情况
+        int totalPassengers = 0;
+        int ghostCount = 0;
+        int normalOrSpecialCount = 0;
+        
         if (list != null)
         {
             foreach (var p in list)
             {
-                if (p != null && p.passengerInfo != null && p.passengerInfo.isGhost && p.gameObject.activeSelf)
+                if (p == null || p.passengerInfo == null || !p.gameObject.activeSelf)
+                    continue;
+                
+                totalPassengers++;
+                
+                if (p.passengerInfo.isGhost)
+                {
                     ghostCount++;
+                }
+                else
+                {
+                    // 普通乘客或特殊乘客
+                    normalOrSpecialCount++;
+                }
             }
         }
 
-        // 有鬼魂未被驱逐，扣除信任度
+        Debug.Log($"[ElevatorMgr] 结算 - 总点位:{totalSpawnPoints}, 当前乘客:{totalPassengers}, 鬼魂:{ghostCount}, 普通/特殊:{normalOrSpecialCount}");
+
+        // ? 胜利条件：所有点位都有乘客，且没有鬼魂
+        if (totalPassengers >= totalSpawnPoints && ghostCount == 0)
+        {
+            Debug.Log("[ElevatorMgr] ?? 电梯满载且无鬼魂，游戏胜利！");
+            StopElevator();
+            MusicMgr.Instance.StopBKMusic();
+            UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, (panel) =>
+            {
+                panel.ShowResult(true);  // 显示胜利
+            });
+            return;
+        }
+
+        // ? 失败条件：有鬼魂未被驱逐，扣除信任度
         if (ghostCount > 0)
         {
             GameDataMgr.Instance.SubTrustValue(ghostCount);
             Debug.Log($"[ElevatorMgr] 本层有 {ghostCount} 个鬼魂未被驱逐，扣除信任度");
 
-            // 检查是否信任度耗尽
             if (GameDataMgr.Instance.IsTrustDepleted)
             {
                 Debug.Log("[ElevatorMgr] 信任度耗尽，游戏失败");
                 StopElevator();
                 EventMgr.Instance.FallIntoAbyss();
+                return;
             }
         }
         else
@@ -372,14 +398,12 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         }
     }
 
-    /// <summary>
-    /// 停止电梯
-    /// </summary>
     public void StopElevator()
     {
         if (!isRunning) return;
 
         isRunning = false;
+        isAbnormalState = false;
 
         EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventStart, OnUnnormalEventStart);
         EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventResolved, OnUnnormalEventResolved);

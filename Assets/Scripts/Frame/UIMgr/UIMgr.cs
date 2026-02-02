@@ -317,8 +317,6 @@ public class UIMgr : BaseSingleton<UIMgr>
     /// <summary>
     /// 获取面板方法
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
     public void GetPanel<T>(UnityAction<T> callback) where T : BasePanel
     {
         string panelName = typeof(T).Name;
@@ -337,6 +335,25 @@ public class UIMgr : BaseSingleton<UIMgr>
                 callback.Invoke(panelInfo.panel);
             }
         }
+    }
+
+    /// <summary>
+    /// 检查指定面板是否正在显示
+    /// </summary>
+    /// <typeparam name="T">面板类型</typeparam>
+    /// <returns>是否正在显示</returns>
+    public bool IsPanelShowing<T>() where T : BasePanel
+    {
+        string panelName = typeof(T).Name;
+        
+        if (panelDic.ContainsKey(panelName))
+        {
+            var panelInfo = panelDic[panelName];
+            return panelInfo.panelBase != null && 
+                   panelInfo.panelBase.gameObject.activeSelf;
+        }
+        
+        return false;
     }
 
     /// <summary>

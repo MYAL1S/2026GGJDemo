@@ -1,16 +1,116 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class GameOverPanel : BasePanel
 {
     private Text txtResult;
+    private CanvasGroup panelCanvasGroup;
+    private float alphaSpeed = 3f;
+    private bool isPanelShowing = false;
+
+    /// <summary>
+    /// GameOverPanel 排序层级（最高，覆盖所有UI）
+    /// </summary>
+    private const int PANEL_SORTING_ORDER = 500;
+    private const int MASK_SORTING_ORDER = 450;
+
     public override void Init()
     {
         base.Init();
         txtResult = GetControl<Text>("TxtResult");
+
+        panelCanvasGroup = GetComponent<CanvasGroup>();
+        if (panelCanvasGroup == null)
+            panelCanvasGroup = gameObject.AddComponent<CanvasGroup>();
+
+        SetupCanvasSorting();
+        SetupBlockingMask();
+    }
+
+    /// <summary>
+    /// 设置 Canvas 排序层级（最高）
+    /// </summary>
+    private void SetupCanvasSorting()
+    {
+        Canvas canvas = GetComponent<Canvas>();
+        if (canvas == null)
+            canvas = gameObject.AddComponent<Canvas>();
+
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = PANEL_SORTING_ORDER;
+
+        if (GetComponent<GraphicRaycaster>() == null)
+            gameObject.AddComponent<GraphicRaycaster>();
+    }
+
+    /// <summary>
+    /// 设置全屏遮罩
+    /// </summary>
+    private void SetupBlockingMask()
+    {
+        Transform existingMask = transform.Find("BlockingMask");
+        if (existingMask != null)
+        {
+            Canvas existingCanvas = existingMask.GetComponent<Canvas>();
+            if (existingCanvas == null)
+            {
+                existingCanvas = existingMask.gameObject.AddComponent<Canvas>();
+                existingCanvas.overrideSorting = true;
+                existingCanvas.sortingOrder = MASK_SORTING_ORDER;
+                existingMask.gameObject.AddComponent<GraphicRaycaster>();
+            }
+            return;
+        }
+
+        GameObject maskObj = new GameObject("BlockingMask");
+        maskObj.transform.SetParent(transform, false);
+        maskObj.transform.SetAsFirstSibling();
+
+        RectTransform maskRect = maskObj.AddComponent<RectTransform>();
+        maskRect.anchorMin = Vector2.zero;
+        maskRect.anchorMax = Vector2.one;
+        maskRect.offsetMin = Vector2.zero;
+        maskRect.offsetMax = Vector2.zero;
+
+        Canvas maskCanvas = maskObj.AddComponent<Canvas>();
+        maskCanvas.overrideSorting = true;
+        maskCanvas.sortingOrder = MASK_SORTING_ORDER;
+        maskObj.AddComponent<GraphicRaycaster>();
+
+        Image maskImage = maskObj.AddComponent<Image>();
+        maskImage.color = new Color(0, 0, 0, 0.7f);  // 较深的遮罩
+        maskImage.raycastTarget = true;
+    }
+
+    public override void ShowMe()
+    {
+        isPanelShowing = true;
+        panelCanvasGroup.alpha = 0;
+
+        // ? 暂停游戏
+        Time.timeScale = 0f;
+    }
+
+    /// <summary>
+    /// 显示结果
+    /// </summary>
+    public void ShowResult(bool isWin)
+    {
+        if (txtResult != null)
+            txtResult.text = isWin ? "You Win!" : "Game Over!";
+    }
+
+    protected override void Update()
+    {
+        // 淡入（使用 unscaledDeltaTime 因为游戏暂停）
+        if (isPanelShowing && panelCanvasGroup.alpha < 1)
+        {
+            panelCanvasGroup.alpha += alphaSpeed * Time.unscaledDeltaTime;
+            if (panelCanvasGroup.alpha >= 1)
+                panelCanvasGroup.alpha = 1;
+        }
     }
 
     protected override void OnButtonClick(string name)
@@ -19,19 +119,27 @@ public class GameOverPanel : BasePanel
         switch (name)
         {
             case "BtnReturn":
-                Time.timeScale = 1;
+                // 恢复时间
+                Time.timeScale = 1f;
+                // 隐藏所有面板
                 UIMgr.Instance.SetAllPanelsActive(false);
+                // 返回开始场景
                 SceneMgr.Instance.LoadSceneAsync("BeginScene");
+                break;
+            case "BtnRestart":
+                // 恢复时间
+                Time.timeScale = 1f;
+                // 重新开始游戏
+                UIMgr.Instance.SetAllPanelsActive(false);
+                SceneMgr.Instance.LoadSceneAsync("GameScene");
                 break;
         }
     }
 
-    /// <summary>
-    /// 显示结果
-    /// </summary>
-    /// <param name="isWin"></param>
-    public void ShowResult(bool isWin)
+    public override void HideMe()
     {
-        txtResult.text = isWin ? "You Win!" : "Game Over!";
+        isPanelShowing = false;
+        Time.timeScale = 1f;
+        base.HideMe();
     }
 }

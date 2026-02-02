@@ -40,6 +40,16 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
 
     #endregion
 
+    /// <summary>
+    /// 是否为本轮新进入的乘客（本轮结算跳过）
+    /// </summary>
+    public bool isNewThisRound = false;
+
+    /// <summary>
+    /// 是否已经结算过伤害（鬼魂只结算一次）
+    /// </summary>
+    public bool hasDamageSettled = false;
+
     public void Init(PassengerSO passengerSO)
     {
         passengerInfo = passengerSO;
@@ -175,6 +185,30 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
         if (PassengerPanel.IsShowing) return;
         if (!ElevatorMgr.Instance.CanInteractPassengers) return;
         EventCenter.Instance.EventTrigger<Passenger>(E_EventType.E_PassengerClicked, this);
+    }
+
+    /// <summary>
+    /// 标记为本轮新进入
+    /// </summary>
+    public void MarkAsNewThisRound()
+    {
+        isNewThisRound = true;
+    }
+
+    /// <summary>
+    /// 清除本轮新进入标记（进入下一轮时调用）
+    /// </summary>
+    public void ClearNewThisRoundMark()
+    {
+        isNewThisRound = false;
+    }
+
+    /// <summary>
+    /// 标记已结算伤害
+    /// </summary>
+    public void MarkDamageSettled()
+    {
+        hasDamageSettled = true;
     }
 
     private void OnDestroy()

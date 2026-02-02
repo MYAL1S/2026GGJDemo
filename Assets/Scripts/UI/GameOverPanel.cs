@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,7 +11,7 @@ public class GameOverPanel : BasePanel
     private bool isPanelShowing = false;
 
     /// <summary>
-    /// GameOverPanel ÅÅĞò²ã¼¶£¨×î¸ß£¬¸²¸ÇËùÓĞUI£©
+    /// GameOverPanel æ’åºå±‚çº§ï¼ˆæœ€é«˜ï¼Œè¦†ç›–æ‰€æœ‰UIï¼‰
     /// </summary>
     private const int PANEL_SORTING_ORDER = 500;
     private const int MASK_SORTING_ORDER = 450;
@@ -30,7 +30,7 @@ public class GameOverPanel : BasePanel
     }
 
     /// <summary>
-    /// ÉèÖÃ Canvas ÅÅĞò²ã¼¶£¨×î¸ß£©
+    /// è®¾ç½® Canvas æ’åºå±‚çº§ï¼ˆæœ€é«˜ï¼‰
     /// </summary>
     private void SetupCanvasSorting()
     {
@@ -46,7 +46,7 @@ public class GameOverPanel : BasePanel
     }
 
     /// <summary>
-    /// ÉèÖÃÈ«ÆÁÕÚÕÖ
+    /// è®¾ç½®å…¨å±é®ç½©
     /// </summary>
     private void SetupBlockingMask()
     {
@@ -80,7 +80,7 @@ public class GameOverPanel : BasePanel
         maskObj.AddComponent<GraphicRaycaster>();
 
         Image maskImage = maskObj.AddComponent<Image>();
-        maskImage.color = new Color(0, 0, 0, 0.7f);  // ½ÏÉîµÄÕÚÕÖ
+        maskImage.color = new Color(0, 0, 0, 0.7f);  // è¾ƒæ·±çš„é®ç½©
         maskImage.raycastTarget = true;
     }
 
@@ -89,12 +89,12 @@ public class GameOverPanel : BasePanel
         isPanelShowing = true;
         panelCanvasGroup.alpha = 0;
 
-        // ? ÔİÍ£ÓÎÏ·
+        // ? æš‚åœæ¸¸æˆ
         Time.timeScale = 0f;
     }
 
     /// <summary>
-    /// ÏÔÊ¾½á¹û
+    /// æ˜¾ç¤ºç»“æœ
     /// </summary>
     public void ShowResult(bool isWin)
     {
@@ -104,7 +104,7 @@ public class GameOverPanel : BasePanel
 
     protected override void Update()
     {
-        // µ­Èë£¨Ê¹ÓÃ unscaledDeltaTime ÒòÎªÓÎÏ·ÔİÍ££©
+        // æ·¡å…¥ï¼ˆä½¿ç”¨ unscaledDeltaTime å› ä¸ºæ¸¸æˆæš‚åœï¼‰
         if (isPanelShowing && panelCanvasGroup.alpha < 1)
         {
             panelCanvasGroup.alpha += alphaSpeed * Time.unscaledDeltaTime;
@@ -119,19 +119,38 @@ public class GameOverPanel : BasePanel
         switch (name)
         {
             case "BtnReturn":
-                // »Ö¸´Ê±¼ä
                 Time.timeScale = 1f;
-                // Òş²ØËùÓĞÃæ°å
-                UIMgr.Instance.SetAllPanelsActive(false);
-                // ·µ»Ø¿ªÊ¼³¡¾°
-                SceneMgr.Instance.LoadSceneAsync("BeginScene");
+                MusicMgr.Instance.StopBKMusic();
+                MusicMgr.Instance.ClearSound();  // â­ æ¸…ç†éŸ³æ•ˆ
+                UIMgr.Instance.ClearAllPanels();
+                SceneMgr.Instance.LoadSceneAsync("BeginScene", () =>
+                {
+                    UIMgr.Instance.ShowPanel<MainMenuPanel>();
+                    MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience_norml");
+                });
                 break;
             case "BtnRestart":
-                // »Ö¸´Ê±¼ä
                 Time.timeScale = 1f;
-                // ÖØĞÂ¿ªÊ¼ÓÎÏ·
-                UIMgr.Instance.SetAllPanelsActive(false);
-                SceneMgr.Instance.LoadSceneAsync("GameScene");
+                MusicMgr.Instance.StopBKMusic();
+                MusicMgr.Instance.ClearSound();  // â­ æ¸…ç†éŸ³æ•ˆ
+                UIMgr.Instance.ClearAllPanels();
+                SceneMgr.Instance.LoadSceneAsync("GameScene", () =>
+                {
+                    // é‡ç½®æ‰€æœ‰æ¸¸æˆæ•°æ®
+                    GameDataMgr.Instance.ResetGameData();
+                    GameLevelMgr.Instance.ResetRuntimeCounters();
+                    PassengerMgr.Instance.ClearAllPassengers();
+                    EventMgr.Instance.ResetState();
+                    
+                    // æ˜¾ç¤ºæ¸¸æˆç•Œé¢
+                    UIMgr.Instance.ShowPanel<UIBackgroundPanel>(E_UILayer.Bottom, (bgPanel) =>
+                    {
+                        UIMgr.Instance.ShowPanel<GamePanel>(E_UILayer.Middle, (gamePanel) =>
+                        {
+                            ElevatorMgr.Instance.StartElevator();
+                        });
+                    });
+                });
                 break;
         }
     }

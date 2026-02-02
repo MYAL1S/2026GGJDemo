@@ -198,12 +198,12 @@ public class OptionsPanel : BasePanel
                 // ? 根据来源返回不同面板
                 if (openedFromGame)
                 {
-                    // 从游戏中打开，返回游戏
-                    // 不需要显示其他面板，GamePanel 还在
+                    // 从游戏中打开，直接返回游戏（GamePanel 还在）
+                    // 不需要做任何事情
                 }
                 else
                 {
-                    // 从主菜单打开，返回主菜单
+                    // 从主菜单打开，显示主菜单
                     UIMgr.Instance.ShowPanel<MainMenuPanel>();
                 }
                 break;

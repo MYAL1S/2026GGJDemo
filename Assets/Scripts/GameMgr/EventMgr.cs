@@ -177,5 +177,37 @@ public class EventMgr : BaseSingleton<EventMgr>
         });
     }
 
+    /// <summary>
+    /// 重置事件管理器状态
+    /// </summary>
+    public void ResetState()
+    {
+        // 停止注视铜镜
+        if (timerID != 0)
+        {
+            TimerMgr.Instance.RemoveTimer(timerID);
+            timerID = 0;
+        }
+
+        // 停止异常事件
+        if (abnormalTimerId != 0)
+        {
+            TimerMgr.Instance.RemoveTimer(abnormalTimerId);
+            abnormalTimerId = 0;
+        }
+
+        // 停止迷雾淡入淡出
+        if (fogCoroutine != null)
+        {
+            MonoMgr.Instance.StopCoroutine(fogCoroutine);
+            fogCoroutine = null;
+        }
+
+        isUnnormalState = false;
+        fogPanel = null;
+
+        Debug.Log("[EventMgr] 状态已重置");
+    }
+
     private EventMgr() { }
 }

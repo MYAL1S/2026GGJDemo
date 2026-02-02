@@ -241,6 +241,10 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
         Passenger passenger = obj.GetComponent<Passenger>();
         passenger.Init(data);
+        
+        // ⭐ 标记为本轮新进入的乘客
+        passenger.MarkAsNewThisRound();
+        
         passengerList.Add(passenger);
     }
 
@@ -489,5 +493,29 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     {
         int count = passengerList?.Count ?? 0;
         EventCenter.Instance.EventTrigger<int>(E_EventType.E_PassengerCountChanged, count);
+    }
+
+    /// <summary>
+    /// 重置乘客管理器（开始新游戏时调用）
+    /// </summary>
+    public void Reset()
+    {
+        ClearAllPassengers();
+        waitingQueue.Clear();
+        Debug.Log("[PassengerMgr] 乘客管理器已重置");
+    }
+
+    /// <summary>
+    /// ⭐ 清除所有乘客的"本轮新进入"标记（结算后调用）
+    /// </summary>
+    public void ClearAllNewThisRoundMarks()
+    {
+        foreach (var passenger in passengerList)
+        {
+            if (passenger != null)
+            {
+                passenger.ClearNewThisRoundMark();
+            }
+        }
     }
 }

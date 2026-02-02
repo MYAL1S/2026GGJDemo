@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,18 +28,21 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     private bool pendingMirrorEvent;
 
     private int activeTimerId = 0;
+    
+    private int delayRandomDisplayTimerId = 0;
 
     private int previousLevel = 0;
     private int currentLevel = 0;
-    private int countdownRemaining;
+    private int countdownRemaining;           // ç”µæ¢¯æ­£å¸¸å€’è®¡æ—¶
+    private int abnormalCountdownRemaining;   // å¼‚å¸¸äº‹ä»¶å€’è®¡æ—¶
 
     private bool isRunning = false;
 
-    /// <summary>
-    /// ÊÇ·ñ´¦ÓÚÒì³£×´Ì¬£¨²»Ó°ÏìµçÌİÁ÷³Ì£¬Ö»Ó°ÏìÒôĞ§ºÍUI£©
-    /// </summary>
     private bool isAbnormalState = false;
     public bool IsAbnormalState => isAbnormalState;
+
+    // â­ èƒœåˆ©çŠ¶æ€æ ‡è®°
+    private bool isWinPending = false;
 
     public bool CanUseMask =>
         currentElevatorState == E_ElevatorState.Moving ||
@@ -49,125 +52,129 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
     public bool CanInteractPassengers => currentElevatorState == E_ElevatorState.Stopped;
 
+    private float floorDisplayTimer = 0f;
+    private bool isRandomDisplaying = false;
+
+    // â­ å¼‚å¸¸äº‹ä»¶ç›¸å…³
+    private bool isAbnormalCountdown = false;  // æ˜¯å¦æ˜¾ç¤ºå¼‚å¸¸å€’è®¡æ—¶
+
     /// <summary>
-    /// Æô¶¯µçÌİ
+    /// å¯åŠ¨ç”µæ¢¯
     /// </summary>
     public void StartElevator()
     {
         if (isRunning)
         {
-            Debug.LogWarning("[ElevatorMgr] µçÌİÒÑÔÚÔËĞĞÖĞ");
+            Debug.LogWarning("[ElevatorMgr] ç”µæ¢¯å·²åœ¨è¿è¡Œä¸­");
             return;
         }
 
         isRunning = true;
         isAbnormalState = false;
+        isWinPending = false;
+        isAbnormalCountdown = false;
+        abnormalCountdownRemaining = 0;
 
         GameLevelMgr.Instance.ResetRuntimeCounters();
+        PassengerMgr.Instance.ClearAllPassengers();
 
         waveNum = 0;
         levelNum = 0;
         previousLevel = 0;
         currentLevel = 0;
 
-        // ? ¼àÌıÒì³£ÊÂ¼ş
         EventCenter.Instance.AddEventListener(E_EventType.E_UnnormalEventStart, OnUnnormalEventStart);
         EventCenter.Instance.AddEventListener(E_EventType.E_UnnormalEventResolved, OnUnnormalEventResolved);
 
-        // ? ²¥·ÅÕı³£±³¾°ÒôÀÖ
-       // MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience_norml");
-        
         MonoMgr.Instance.AddFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
         MonoMgr.Instance.AddUpdateListener(UpdateCountdown);
-
-        EnterMovingState();
-    }
-
-    private void ClearActiveTimer()
-    {
-        if (activeTimerId != 0)
+        
+        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
         {
-            TimerMgr.Instance.RemoveTimer(activeTimerId);
-            activeTimerId = 0;
-        }
+            if (panel != null)
+            {
+                txtFloor = panel.GetControl<Text>("TxtFloor");
+                ChangeLevelUI(18);
+            }
+            
+            EnterInitialDepartingState();
+        });
+        
+        Debug.Log("[ElevatorMgr] ç”µæ¢¯å·²å¯åŠ¨ï¼Œæ¸¸æˆå¼€å§‹");
     }
 
     /// <summary>
-    /// Òì³£ÊÂ¼ş¿ªÊ¼£¨²»ÔİÍ£µçÌİ£¬Ö»¸Ä±ä×´Ì¬£©
+    /// æ¸¸æˆå¼€å§‹æ—¶çš„åˆå§‹ç¦»å¼€çŠ¶æ€
     /// </summary>
-    private void OnUnnormalEventStart()
-    {
-        Debug.Log("[ElevatorMgr] ½øÈëÒì³£×´Ì¬");
-        isAbnormalState = true;
-
-        // ? ÇĞ»»ÎªÒì³£±³¾°ÒôÀÖ
-        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_amb_abnormal");
-
-        // ? Í¨ÖªUI¸üĞÂ£¨Ê±¼äÎÄ±¾±äºì£©
-        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_AbnormalStateChanged, true);
-    }
-
-    /// <summary>
-    /// Òì³£ÊÂ¼ş½â¾ö
-    /// </summary>
-    private void OnUnnormalEventResolved()
-    {
-        Debug.Log("[ElevatorMgr] Òì³£×´Ì¬½áÊø");
-        isAbnormalState = false;
-
-        // ? »Ö¸´Õı³£±³¾°ÒôÀÖ
-        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience_normal");
-
-        // ? Í¨ÖªUI¸üĞÂ£¨Ê±¼äÎÄ±¾»Ö¸´£©
-        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_AbnormalStateChanged, false);
-    }
-
-    public void EnterMovingState()
+    private void EnterInitialDepartingState()
     {
         if (!isRunning) return;
 
         ClearActiveTimer();
 
-        currentElevatorState = E_ElevatorState.Moving;
-        Debug.Log("[ElevatorMgr] µçÌİ¿ªÊ¼ÔËĞĞ...");
+        currentElevatorState = E_ElevatorState.Departing;
+        
+        Debug.Log("[ElevatorMgr] æ¸¸æˆå¼€å§‹ - ç”µæ¢¯æ­£åœ¨ç¦»å¼€åˆå§‹æ¥¼å±‚...");
 
-        var config = ResourcesMgr.Instance;
-        int minTime = config.elevatorMovingTimeMin * 1000;
-        int maxTime = config.elevatorMovingTimeMax * 1000;
-        int movingDuration = Random.Range(minTime, maxTime + 1);
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, false);
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
 
-        StartCountdown(movingDuration);
+        MusicMgr.Instance.PlaySound("Music/26GGJsound/elevator_doorclose", false);
 
-        activeTimerId = TimerMgr.Instance.CreateTimer(false, movingDuration, () =>
+        int departingDuration = ResourcesMgr.Instance.elevatorDepartingTime * 1000;
+        
+        // â­ åˆå§‹ç¦»å¼€çŠ¶æ€æ˜¾ç¤ºå€’è®¡æ—¶
+        StartCountdown(departingDuration);
+        
+        int delayMs = ResourcesMgr.Instance.floorRandomDisplayDelay * 1000;
+        delayRandomDisplayTimerId = TimerMgr.Instance.CreateTimer(false, delayMs, () =>
+        {
+            delayRandomDisplayTimerId = 0;
+            if (isRunning && currentElevatorState == E_ElevatorState.Departing)
+            {
+                StartRandomFloorDisplay();
+            }
+        });
+
+        activeTimerId = TimerMgr.Instance.CreateTimer(false, departingDuration, () =>
         {
             activeTimerId = 0;
             StopCountdown();
+            
+            StopRandomFloorDisplay();
+            ClearDelayTimer();
 
             if (!isRunning) return;
 
-            // ? ´¥·¢Òì³£ÊÂ¼ş£¨²»Ó°ÏìÁ÷³Ì£¬¼ÌĞø½øÈëµ½´ï×´Ì¬£©
-            bool triggerAbnormal = Random.value < config.abnormalEventChance;
-            if (triggerAbnormal && !isAbnormalState)
-            {
-                EventMgr.Instance.UnnormalEvent();
-            }
-
-            EnterArrivingState();
+            PrepareNextLevel();
+            ChangeLevelUI(currentLevel);
+            EnterMovingState();
         });
     }
 
-    public void EnterArrivingState()
+    // æ·»åŠ å­—æ®µ
+    private bool isGoingUp = true;  // â­ å½“å‰ç”µæ¢¯æ–¹å‘
+
+    /// <summary>
+    /// é¢„å…ˆè®¡ç®—ä¸‹ä¸€å±‚ä¿¡æ¯
+    /// </summary>
+    private void PrepareNextLevel()
     {
-        if (!isRunning) return;
-
-        ClearActiveTimer();
-
-        currentElevatorState = E_ElevatorState.Arriving;
-        Debug.Log("[ElevatorMgr] µçÌİ¼´½«µ½´ï...");
+        // å¦‚æœèƒœåˆ©å¾…å®šï¼Œç›®æ ‡æ¥¼å±‚è®¾ä¸º1
+        if (isWinPending)
+        {
+            previousLevel = currentLevel;
+            currentLevel = 1;
+            
+            isGoingUp = currentLevel > previousLevel;
+            EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp);
+            Debug.Log($"[ElevatorMgr] èƒœåˆ©ï¼å‰å¾€1å±‚ ({(isGoingUp ? "ä¸Šå‡" : "ä¸‹é™")})");
+            return;
+        }
 
         if (ResourcesMgr.Instance.waveSOList == null || ResourcesMgr.Instance.waveSOList.Count == 0)
         {
-            Debug.LogError("[ElevatorMgr] waveSOList Îª¿Õ!");
+            Debug.LogError("[ElevatorMgr] waveSOList ä¸ºç©º!");
             return;
         }
 
@@ -190,12 +197,353 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         previousLevel = currentLevel;
         currentLevel = currentLevelDetail.level;
 
-        bool isGoingUp = currentLevel > previousLevel;
+        // â­ è®¡ç®—æ–¹å‘
+        isGoingUp = currentLevel > previousLevel;
+        
+        Debug.Log($"[ElevatorMgr] ä¸‹ä¸€æ¥¼å±‚: {currentLevel} ({(isGoingUp ? "ä¸Šå‡" : "ä¸‹é™")}) [ä»{previousLevel}å±‚]");
+    }
+
+    private void StartRandomFloorDisplay()
+    {
+        StopRandomFloorDisplay();
+        isRandomDisplaying = true;
+        floorDisplayTimer = 0f;
+        MonoMgr.Instance.AddUpdateListener(UpdateRandomFloorDisplay);
+        Debug.Log("[ElevatorMgr] å¼€å§‹éšæœºæ˜¾ç¤ºæ¥¼å±‚");
+    }
+
+    private void UpdateRandomFloorDisplay()
+    {
+        if (!isRandomDisplaying || !isRunning || currentElevatorState != E_ElevatorState.Departing)
+            return;
+
+        floorDisplayTimer += Time.deltaTime * 1000f;
+        
+        float interval = ResourcesMgr.Instance.floorRandomDisplayInterval;
+        
+        if (floorDisplayTimer >= interval)
+        {
+            floorDisplayTimer = 0f;
+            ChangeLevelUI(Random.Range(2, 19));
+        }
+    }
+
+    private void StopRandomFloorDisplay()
+    {
+        if (isRandomDisplaying)
+        {
+            isRandomDisplaying = false;
+            MonoMgr.Instance.RemoveUpdateListener(UpdateRandomFloorDisplay);
+            Debug.Log("[ElevatorMgr] åœæ­¢éšæœºæ˜¾ç¤ºæ¥¼å±‚");
+        }
+    }
+
+    private void ClearDelayTimer()
+    {
+        if (delayRandomDisplayTimerId != 0)
+        {
+            TimerMgr.Instance.RemoveTimer(delayRandomDisplayTimerId);
+            delayRandomDisplayTimerId = 0;
+        }
+    }
+
+    private void RefreshUIReferences()
+    {
+        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
+        {
+            if (panel != null)
+                txtFloor = panel.GetControl<Text>("TxtFloor");
+        });
+    }
+
+    public void ChangeLevelUI(int level)
+    {
+        if (txtFloor != null)
+            txtFloor.text = level.ToString();
+    }
+
+    private void ClearActiveTimer()
+    {
+        if (activeTimerId != 0)
+        {
+            TimerMgr.Instance.RemoveTimer(activeTimerId);
+            activeTimerId = 0;
+        }
+    }
+
+    private void OnUnnormalEventStart()
+    {
+        Debug.Log("[ElevatorMgr] è¿›å…¥å¼‚å¸¸çŠ¶æ€");
+        isAbnormalState = true;
+
+        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_amb_abnormal");
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_AbnormalStateChanged, true);
+        
+        // â­ åˆ‡æ¢åˆ°å¼‚å¸¸äº‹ä»¶å€’è®¡æ—¶
+        isAbnormalCountdown = true;
+        
+        // â­ å¼€å§‹å¼‚å¸¸äº‹ä»¶å€’è®¡æ—¶
+        abnormalCountdownRemaining = ResourcesMgr.Instance.abnormalEventTimeout * 1000;
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, abnormalCountdownRemaining / 1000);
+    }
+
+    private void OnUnnormalEventResolved()
+    {
+        Debug.Log("[ElevatorMgr] å¼‚å¸¸çŠ¶æ€ç»“æŸ");
+        isAbnormalState = false;
+
+        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience_norml");
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_AbnormalStateChanged, false);
+        
+        // â­ æ¢å¤æ˜¾ç¤ºç”µæ¢¯æ­£å¸¸å€’è®¡æ—¶
+        isAbnormalCountdown = false;
+        abnormalCountdownRemaining = 0;
+        
+        // â­ ç«‹å³æ›´æ–°æ˜¾ç¤ºå½“å‰ç”µæ¢¯å€’è®¡æ—¶
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, countdownRemaining / 1000);
+    }
+
+    #region å€’è®¡æ—¶é€»è¾‘
+
+    private void StartCountdown(int durationMs)
+    {
+        countdownRemaining = durationMs;
+        
+        // â­ åªæœ‰éå¼‚å¸¸çŠ¶æ€æ‰æ›´æ–°æ˜¾ç¤º
+        if (!isAbnormalCountdown)
+        {
+            EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, countdownRemaining / 1000);
+        }
+    }
+
+    private void StopCountdown()
+    {
+        countdownRemaining = 0;
+        
+        // â­ åªæœ‰éå¼‚å¸¸çŠ¶æ€æ‰æ›´æ–°æ˜¾ç¤º
+        if (!isAbnormalCountdown)
+        {
+            EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, 0);
+        }
+    }
+
+    private void UpdateCountdown()
+    {
+        // â­ æ›´æ–°ç”µæ¢¯æ­£å¸¸å€’è®¡æ—¶ï¼ˆå§‹ç»ˆåœ¨åå°è¿è¡Œï¼‰
+        if (countdownRemaining > 0)
+        {
+            countdownRemaining -= (int)(Time.deltaTime * 1000);
+            if (countdownRemaining < 0) countdownRemaining = 0;
+        }
+        
+        // â­ æ›´æ–°å¼‚å¸¸äº‹ä»¶å€’è®¡æ—¶
+        if (isAbnormalCountdown && abnormalCountdownRemaining > 0)
+        {
+            int previousSeconds = abnormalCountdownRemaining / 1000;
+            abnormalCountdownRemaining -= (int)(Time.deltaTime * 1000);
+            int currentSeconds = Mathf.Max(0, abnormalCountdownRemaining / 1000);
+
+            if (currentSeconds != previousSeconds)
+            {
+                EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, currentSeconds);
+            }
+            
+            // â­ å¼‚å¸¸å€’è®¡æ—¶ç»“æŸæ—¶ï¼Œè§¦å‘å¤±è´¥
+            if (abnormalCountdownRemaining <= 0)
+            {
+                Debug.Log("[ElevatorMgr] å¼‚å¸¸äº‹ä»¶è¶…æ—¶ï¼Œæ¸¸æˆå¤±è´¥ï¼");
+                isAbnormalCountdown = false;
+                StopElevator();
+                EventMgr.Instance.FallIntoAbyss();
+            }
+            return;
+        }
+        
+        // â­ éå¼‚å¸¸çŠ¶æ€ï¼Œæ›´æ–°ç”µæ¢¯å€’è®¡æ—¶æ˜¾ç¤º
+        if (!isAbnormalCountdown && countdownRemaining > 0)
+        {
+            int previousSeconds = (countdownRemaining + (int)(Time.deltaTime * 1000)) / 1000;
+            int currentSeconds = countdownRemaining / 1000;
+
+            if (currentSeconds != previousSeconds)
+            {
+                EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, currentSeconds);
+            }
+        }
+    }
+
+    #endregion
+
+    private void CheckResults()
+    {
+        var list = PassengerMgr.Instance.passengerList;
+        int totalSpawnPoints = ResourcesMgr.Instance.globalPassengerSpawnPoints.Count;
+        
+        int totalPassengers = 0;
+        int ghostCount = 0;
+        int normalOrSpecialCount = 0;
+        
+        // â­ éœ€è¦ç»“ç®—ä¼¤å®³çš„é¬¼é­‚åˆ—è¡¨
+        List<Passenger> ghostsToSettle = new List<Passenger>();
+        
+        if (list != null)
+        {
+            foreach (var p in list)
+            {
+                if (p == null || p.passengerInfo == null || !p.gameObject.activeSelf)
+                    continue;
+                
+                totalPassengers++;
+                
+                if (p.passengerInfo.isGhost)
+                {
+                    ghostCount++;
+                    
+                    // â­ æ£€æŸ¥æ˜¯å¦éœ€è¦ç»“ç®—ä¼¤å®³ï¼š
+                    // 1. ä¸æ˜¯æœ¬è½®æ–°è¿›å…¥çš„ä¹˜å®¢
+                    // 2. è¿˜æ²¡æœ‰ç»“ç®—è¿‡ä¼¤å®³
+                    if (!p.isNewThisRound && !p.hasDamageSettled)
+                    {
+                        ghostsToSettle.Add(p);
+                    }
+                }
+                else
+                {
+                    normalOrSpecialCount++;
+                }
+            }
+        }
+
+        // â­ æ¸…é™¤æ‰€æœ‰ä¹˜å®¢çš„"æœ¬è½®æ–°è¿›å…¥"æ ‡è®°ï¼Œä¸ºä¸‹ä¸€è½®åšå‡†å¤‡
+        PassengerMgr.Instance.ClearAllNewThisRoundMarks();
+
+        Debug.Log($"[ElevatorMgr] ç»“ç®— - æ€»ç‚¹ä½:{totalSpawnPoints}, å½“å‰ä¹˜å®¢:{totalPassengers}, é¬¼é­‚æ€»æ•°:{ghostCount}, éœ€ç»“ç®—é¬¼é­‚:{ghostsToSettle.Count}, æ™®é€š/ç‰¹æ®Š:{normalOrSpecialCount}");
+
+        // â­ èƒœåˆ©æ¡ä»¶ï¼šæ‰€æœ‰ç‚¹ä½éƒ½æœ‰ä¹˜å®¢ï¼Œä¸”æ²¡æœ‰é¬¼é­‚
+        if (totalPassengers >= totalSpawnPoints && ghostCount == 0)
+        {
+            Debug.Log("[ElevatorMgr] ğŸ‰ ç”µæ¢¯æ»¡è½½ä¸”æ— é¬¼é­‚ï¼Œè§¦å‘èƒœåˆ©æµç¨‹ï¼");
+            
+            isWinPending = true;
+            
+            if (isAbnormalState)
+            {
+                isAbnormalState = false;
+                EventCenter.Instance.EventTrigger<bool>(E_EventType.E_AbnormalStateChanged, false);
+            }
+            
+            return;
+        }
+
+        // â­ å¤±è´¥æ¡ä»¶ï¼šæœ‰éœ€è¦ç»“ç®—çš„é¬¼é­‚ï¼Œæ‰£é™¤ä¿¡ä»»åº¦
+        if (ghostsToSettle.Count > 0)
+        {
+            // æ ‡è®°è¿™äº›é¬¼é­‚å·²ç»“ç®—
+            foreach (var ghost in ghostsToSettle)
+            {
+                ghost.MarkDamageSettled();
+            }
+            
+            GameDataMgr.Instance.SubTrustValue(ghostsToSettle.Count);
+            Debug.Log($"[ElevatorMgr] æœ¬å±‚æœ‰ {ghostsToSettle.Count} ä¸ªé¬¼é­‚æœªè¢«é©±é€ï¼Œæ‰£é™¤ä¿¡ä»»åº¦");
+
+            if (GameDataMgr.Instance.IsTrustDepleted)
+            {
+                Debug.Log("[ElevatorMgr] ä¿¡ä»»åº¦è€—å°½ï¼Œæ¸¸æˆå¤±è´¥");
+                StopElevator();
+                EventMgr.Instance.FallIntoAbyss();
+                return;
+            }
+        }
+        else
+        {
+            Debug.Log("[ElevatorMgr] æœ¬å±‚å®‰å…¨é€šè¿‡ï¼ˆæ— éœ€ç»“ç®—çš„é¬¼é­‚ï¼‰");
+        }
+    }
+
+    public void StopElevator()
+    {
+        if (!isRunning) return;
+
+        isRunning = false;
+        isAbnormalState = false;
+        isWinPending = false;
+        isAbnormalCountdown = false;
+        abnormalCountdownRemaining = 0;
+
+        EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventStart, OnUnnormalEventStart);
+        EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventResolved, OnUnnormalEventResolved);
+        MonoMgr.Instance.RemoveUpdateListener(UpdateCountdown);
+        MonoMgr.Instance.RemoveFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
+        
+        ClearActiveTimer();
+        
+        countdownRemaining = 0;
+        EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, 0);
+        
+        StopRandomFloorDisplay();
+        ClearDelayTimer();
+
+        Debug.Log("[ElevatorMgr] ç”µæ¢¯å·²åœæ­¢");
+    }
+
+    private ElevatorMgr()
+    {
+    }
+
+    public void EnterMovingState()
+    {
+        if (!isRunning) return;
+
+        ClearActiveTimer();
+
+        currentElevatorState = E_ElevatorState.Moving;
+        Debug.Log("[ElevatorMgr] ç”µæ¢¯å¼€å§‹è¿è¡Œ...");
+
+        // â­ ç§»åŠ¨çŠ¶æ€æ›´æ–°æ–¹å‘ç®­å¤´
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp);
-        Debug.Log($"[ElevatorMgr] µçÌİ·½Ïò: {(isGoingUp ? "ÉÏÉı" : "ÏÂ½µ")} ({previousLevel} -> {currentLevel})");
+
+        var config = ResourcesMgr.Instance;
+        int minTime = config.elevatorMovingTimeMin * 1000;
+        int maxTime = config.elevatorMovingTimeMax * 1000;
+        int movingDuration = Random.Range(minTime, maxTime + 1);
+        
+        int arrivingDuration = config.elevatorArrivingTime * 1000;
+        int totalDuration = movingDuration + arrivingDuration;
+        StartCountdown(totalDuration);
+
+        activeTimerId = TimerMgr.Instance.CreateTimer(false, movingDuration, () =>
+        {
+            activeTimerId = 0;
+
+            if (!isRunning) return;
+
+            if (!isWinPending)
+            {
+                bool triggerAbnormal = Random.value < config.abnormalEventChance;
+                if (triggerAbnormal && !isAbnormalState)
+                {
+                    EventMgr.Instance.UnnormalEvent();
+                }
+            }
+
+            EnterArrivingState();
+        });
+    }
+
+    public void EnterArrivingState()
+    {
+        if (!isRunning) return;
+
+        ClearActiveTimer();
+
+        currentElevatorState = E_ElevatorState.Arriving;
+        Debug.Log("[ElevatorMgr] ç”µæ¢¯å³å°†åˆ°è¾¾...");
+
+        // â­ åˆ°è¾¾çŠ¶æ€ä¿æŒæ–¹å‘ç®­å¤´
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp);
 
         int arrivingDuration = ResourcesMgr.Instance.elevatorArrivingTime * 1000;
-        StartCountdown(arrivingDuration);
 
         activeTimerId = TimerMgr.Instance.CreateTimer(false, arrivingDuration, () =>
         {
@@ -204,19 +552,12 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
             if (!isRunning) return;
 
-            // ? ¸ù¾İÒì³£×´Ì¬²¥·Å²»Í¬ÒôĞ§
             string beepSound = isAbnormalState 
                 ? "Music/26GGJsound/elevator_beep_abnormal" 
                 : "Music/26GGJsound/elevator_beep";
             MusicMgr.Instance.PlaySound(beepSound, false);
 
-            ChangeLevelUI(currentLevelDetail.level);
             EnterStoppedState();
-        }, 400,
-        () =>
-        {
-            if (isRunning)
-                ChangeLevelUI(Random.Range(2, 18));
         });
     }
 
@@ -227,16 +568,35 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         ClearActiveTimer();
 
         currentElevatorState = E_ElevatorState.Stopped;
-        Debug.Log("[ElevatorMgr] µçÌİÒÑÍ£¿¿");
+        Debug.Log("[ElevatorMgr] ç”µæ¢¯å·²åœé ");
 
+        // â­ åœé çŠ¶æ€ï¼šä¸¤ä¸ªç®­å¤´éƒ½ä¸äº®
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, true);
 
-        // ? ¸ù¾İÒì³£×´Ì¬²¥·Å²»Í¬¿ªÃÅÒôĞ§
         string doorOpenSound = isAbnormalState 
             ? "Music/26GGJsound/elevator_dooropen_abnormal" 
             : "Music/26GGJsound/elevator_dooropen";
         MusicMgr.Instance.PlaySound(doorOpenSound, false);
+
+        if (isWinPending)
+        {
+            Debug.Log("[ElevatorMgr] ğŸ‰ åˆ°è¾¾1å±‚ï¼Œæ¸¸æˆèƒœåˆ©ï¼");
+            
+            PassengerMgr.Instance.ClearAllPassengers();
+            StopElevator();
+            MusicMgr.Instance.StopBKMusic();
+            
+            int delayMs = ResourcesMgr.Instance.winPanelDelay * 1000;
+            TimerMgr.Instance.CreateTimer(false, delayMs, () =>
+            {
+                UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, (panel) =>
+                {
+                    panel.ShowResult(true);
+                });
+            });
+            return;
+        }
 
         PassengerMgr.Instance.SpawnWave();
 
@@ -244,7 +604,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         if (canTriggerMirror)
         {
             UIMgr.Instance.ShowPanel<MirrorPanel>(E_UILayer.Top);
-            Debug.Log("[ElevatorMgr] ´¥·¢Í­¾µÊÂ¼ş");
+            Debug.Log("[ElevatorMgr] è§¦å‘é“œé•œäº‹ä»¶");
         }
         pendingMirrorEvent = false;
 
@@ -269,159 +629,43 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         ClearActiveTimer();
 
         currentElevatorState = E_ElevatorState.Departing;
-        Debug.Log("[ElevatorMgr] µçÌİÕıÔÚÀë¿ª...");
+        Debug.Log("[ElevatorMgr] ç”µæ¢¯æ­£åœ¨ç¦»å¼€...");
 
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, false);
+        
+        // â­ ç¦»å¼€çŠ¶æ€ï¼šä¸¤ä¸ªç®­å¤´éƒ½äº®
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
 
-        // ? ¸ù¾İÒì³£×´Ì¬²¥·Å²»Í¬¹ØÃÅÒôĞ§
         string doorCloseSound = isAbnormalState 
             ? "Music/26GGJsound/elevator_doorclose_abnormal" 
             : "Music/26GGJsound/elevator_doorclose";
         MusicMgr.Instance.PlaySound(doorCloseSound, false);
 
         int departingDuration = ResourcesMgr.Instance.elevatorDepartingTime * 1000;
+        StartCountdown(departingDuration);
+        
+        StartRandomFloorDisplay();
 
         activeTimerId = TimerMgr.Instance.CreateTimer(false, departingDuration, () =>
         {
             activeTimerId = 0;
+            StopCountdown();
+            
+            StopRandomFloorDisplay();
 
             if (!isRunning) return;
 
-            CheckResults();
+            if (!isWinPending)
+            {
+                CheckResults();
+            }
 
             if (isRunning)
+            {
+                PrepareNextLevel();
+                ChangeLevelUI(currentLevel);
                 EnterMovingState();
-        });
-    }
-
-    #region µ¹¼ÆÊ±Âß¼­
-
-    private void StartCountdown(int durationMs)
-    {
-        countdownRemaining = durationMs;
-        EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, countdownRemaining / 1000);
-    }
-
-    private void StopCountdown()
-    {
-        countdownRemaining = 0;
-        EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, 0);
-    }
-
-    private void UpdateCountdown()
-    {
-        if (countdownRemaining <= 0)
-            return;
-
-        int previousSeconds = countdownRemaining / 1000;
-        countdownRemaining -= (int)(Time.deltaTime * 1000);
-        int currentSeconds = Mathf.Max(0, countdownRemaining / 1000);
-
-        if (currentSeconds != previousSeconds)
-        {
-            EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, currentSeconds);
-        }
-    }
-
-    #endregion
-
-    public void ChangeLevelUI(int level)
-    {
-        if (txtFloor != null)
-            txtFloor.text = level.ToString();
-    }
-
-    private void CheckResults()
-    {
-        var list = PassengerMgr.Instance.passengerList;
-        int totalSpawnPoints = ResourcesMgr.Instance.globalPassengerSpawnPoints.Count;
-        
-        // Í³¼Æµ±Ç°³Ë¿ÍÇé¿ö
-        int totalPassengers = 0;
-        int ghostCount = 0;
-        int normalOrSpecialCount = 0;
-        
-        if (list != null)
-        {
-            foreach (var p in list)
-            {
-                if (p == null || p.passengerInfo == null || !p.gameObject.activeSelf)
-                    continue;
-                
-                totalPassengers++;
-                
-                if (p.passengerInfo.isGhost)
-                {
-                    ghostCount++;
-                }
-                else
-                {
-                    // ÆÕÍ¨³Ë¿Í»òÌØÊâ³Ë¿Í
-                    normalOrSpecialCount++;
-                }
             }
-        }
-
-        Debug.Log($"[ElevatorMgr] ½áËã - ×ÜµãÎ»:{totalSpawnPoints}, µ±Ç°³Ë¿Í:{totalPassengers}, ¹í»ê:{ghostCount}, ÆÕÍ¨/ÌØÊâ:{normalOrSpecialCount}");
-
-        // ? Ê¤ÀûÌõ¼ş£ºËùÓĞµãÎ»¶¼ÓĞ³Ë¿Í£¬ÇÒÃ»ÓĞ¹í»ê
-        if (totalPassengers >= totalSpawnPoints && ghostCount == 0)
-        {
-            Debug.Log("[ElevatorMgr] ?? µçÌİÂúÔØÇÒÎŞ¹í»ê£¬ÓÎÏ·Ê¤Àû£¡");
-            StopElevator();
-            MusicMgr.Instance.StopBKMusic();
-            UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, (panel) =>
-            {
-                panel.ShowResult(true);  // ÏÔÊ¾Ê¤Àû
-            });
-            return;
-        }
-
-        // ? Ê§°ÜÌõ¼ş£ºÓĞ¹í»êÎ´±»ÇıÖğ£¬¿Û³ıĞÅÈÎ¶È
-        if (ghostCount > 0)
-        {
-            GameDataMgr.Instance.SubTrustValue(ghostCount);
-            Debug.Log($"[ElevatorMgr] ±¾²ãÓĞ {ghostCount} ¸ö¹í»êÎ´±»ÇıÖğ£¬¿Û³ıĞÅÈÎ¶È");
-
-            if (GameDataMgr.Instance.IsTrustDepleted)
-            {
-                Debug.Log("[ElevatorMgr] ĞÅÈÎ¶ÈºÄ¾¡£¬ÓÎÏ·Ê§°Ü");
-                StopElevator();
-                EventMgr.Instance.FallIntoAbyss();
-                return;
-            }
-        }
-        else
-        {
-            Debug.Log("[ElevatorMgr] ±¾²ã°²È«Í¨¹ı");
-        }
-    }
-
-    public void StopElevator()
-    {
-        if (!isRunning) return;
-
-        isRunning = false;
-        isAbnormalState = false;
-
-        EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventStart, OnUnnormalEventStart);
-        EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventResolved, OnUnnormalEventResolved);
-        MonoMgr.Instance.RemoveUpdateListener(UpdateCountdown);
-        MonoMgr.Instance.RemoveFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
-
-        ClearActiveTimer();
-        StopCountdown();
-
-        Debug.Log("[ElevatorMgr] µçÌİÒÑÍ£Ö¹");
-    }
-
-    private ElevatorMgr()
-    {
-        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
-        {
-            if (panel != null)
-                txtFloor = panel.GetControl<Text>("TxtFloor");
         });
     }
 }

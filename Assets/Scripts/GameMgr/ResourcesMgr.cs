@@ -39,6 +39,10 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     [Tooltip("电梯离开动画时间（秒）")]
     public int elevatorDepartingTime = 5;
 
+    // ⭐ 新增配置
+    [Tooltip("第一次电梯停靠时间（秒）")]
+    public int firstDockingTime = 10;
+
     [Tooltip("楼层随机显示延迟时间（秒）")]
     public int floorRandomDisplayDelay = 2;
 

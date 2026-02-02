@@ -50,13 +50,17 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState == E_ElevatorState.Departing ||
         isAbnormalState;
 
-    public bool CanInteractPassengers => currentElevatorState == E_ElevatorState.Stopped;
+    public bool CanInteractPassengers => currentElevatorState == E_ElevatorState.Stopped && !isFirstDocking;
 
     private float floorDisplayTimer = 0f;
     private bool isRandomDisplaying = false;
 
     // ⭐ 异常事件相关
     private bool isAbnormalCountdown = false;  // 是否显示异常倒计时
+
+    // 添加字段
+    private bool isGoingUp = true;  // ⭐ 当前电梯方向
+    private bool isFirstDocking = true;  // ⭐ 是否是第一次停靠
 
     /// <summary>
     /// 启动电梯
@@ -74,6 +78,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         isWinPending = false;
         isAbnormalCountdown = false;
         abnormalCountdownRemaining = 0;
+        isFirstDocking = true;  // ⭐ 重置第一次停靠标记
 
         GameLevelMgr.Instance.ResetRuntimeCounters();
         PassengerMgr.Instance.ClearAllPassengers();
@@ -151,9 +156,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
             EnterMovingState();
         });
     }
-
-    // 添加字段
-    private bool isGoingUp = true;  // ⭐ 当前电梯方向
 
     /// <summary>
     /// 预先计算下一层信息
@@ -470,6 +472,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         isWinPending = false;
         isAbnormalCountdown = false;
         abnormalCountdownRemaining = 0;
+        isFirstDocking = true;  // ⭐ 重置
 
         EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventStart, OnUnnormalEventStart);
         EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventResolved, OnUnnormalEventResolved);
@@ -485,10 +488,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         ClearDelayTimer();
 
         Debug.Log("[ElevatorMgr] 电梯已停止");
-    }
-
-    private ElevatorMgr()
-    {
     }
 
     public void EnterMovingState()
@@ -568,7 +567,16 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         ClearActiveTimer();
 
         currentElevatorState = E_ElevatorState.Stopped;
-        Debug.Log("[ElevatorMgr] 电梯已停靠");
+        
+        // ⭐ 判断是否是第一次停靠
+        if (isFirstDocking)
+        {
+            Debug.Log("[ElevatorMgr] 电梯首次停靠（无法与乘客交互）");
+        }
+        else
+        {
+            Debug.Log("[ElevatorMgr] 电梯已停靠");
+        }
 
         // ⭐ 停靠状态：两个箭头都不亮
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
@@ -600,15 +608,23 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
         PassengerMgr.Instance.SpawnWave();
 
-        bool canTriggerMirror = pendingMirrorEvent && GameLevelMgr.Instance.TryConsumeMirrorOccurence();
-        if (canTriggerMirror)
+        // ⭐ 只有非第一次停靠才触发铜镜事件
+        if (!isFirstDocking)
         {
-            UIMgr.Instance.ShowPanel<MirrorPanel>(E_UILayer.Top);
-            Debug.Log("[ElevatorMgr] 触发铜镜事件");
+            bool canTriggerMirror = pendingMirrorEvent && GameLevelMgr.Instance.TryConsumeMirrorOccurence();
+            if (canTriggerMirror)
+            {
+                UIMgr.Instance.ShowPanel<MirrorPanel>(E_UILayer.Top);
+                Debug.Log("[ElevatorMgr] 触发铜镜事件");
+            }
         }
         pendingMirrorEvent = false;
 
-        int dockingDuration = ResourcesMgr.Instance.elevatorDockingTime * 1000;
+        // ⭐ 根据是否第一次停靠使用不同的停靠时间
+        int dockingDuration = isFirstDocking 
+            ? ResourcesMgr.Instance.firstDockingTime * 1000 
+            : ResourcesMgr.Instance.elevatorDockingTime * 1000;
+    
         StartCountdown(dockingDuration);
 
         activeTimerId = TimerMgr.Instance.CreateTimer(false, dockingDuration, () =>
@@ -617,6 +633,13 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
             StopCountdown();
 
             if (!isRunning) return;
+            
+            // ⭐ 第一次停靠结束后，设置为非第一次
+            if (isFirstDocking)
+            {
+                isFirstDocking = false;
+                Debug.Log("[ElevatorMgr] 第一次停靠结束，后续可与乘客交互");
+            }
 
             EnterDepartingState();
         });
@@ -667,5 +690,11 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
                 EnterMovingState();
             }
         });
+    }
+
+    // 在类的最后，确保有这个私有构造函数
+    private ElevatorMgr()
+    {
+        // 私有构造函数，防止外部实例化
     }
 }

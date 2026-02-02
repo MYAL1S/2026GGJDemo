@@ -28,6 +28,12 @@ public class MirrorPanel : BasePanel
     private const int PANEL_SORTING_ORDER = 200;
     private const int MASK_SORTING_ORDER = 150;
 
+    private bool isWarningActive = false;
+    private int warningTimerId = 0;
+    private System.Action warningSafeExit;
+    private System.Action warningFail;
+    private RawImage imgMirror; // 假设主镜面图片控件名为 ImgMirror
+
     public override void Init()
     {
         base.Init();
@@ -38,6 +44,9 @@ public class MirrorPanel : BasePanel
             progressFrontRect = imgProgressFront.GetComponent<RectTransform>();
             originalProgressWidth = progressFrontRect.sizeDelta.x;
         }
+
+        // ⭐ 获取主镜面图片控件（如控件名不同请修改）
+        imgMirror = GetControl<RawImage>("Mirror");
 
         SetupBlockingMask();
         SetupCanvasSorting();
@@ -140,20 +149,29 @@ public class MirrorPanel : BasePanel
     /// </summary>
     private void CheckGhostKill()
     {
-        if (hasTriggeredDeath) return;
-        
+        if (hasTriggeredDeath || isWarningActive) return; // 警告期间不再触发
+
         float checkInterval = ResourcesMgr.Instance.mirrorDeathCheckInterval;
-        
-        // 每隔一定时间检查一次
+
         if (gazeTime - lastDeathCheckTime >= checkInterval)
         {
             lastDeathCheckTime = gazeTime;
-            
+
             float deathChance = ResourcesMgr.Instance.mirrorDeathChance;
-            
+
             if (Random.value < deathChance)
             {
-                OnGhostKill();
+                // 先触发警告
+                ShowMirrorWarning(
+                    onSafeExit: () => {
+                        // 玩家及时退出，无事发生
+                        Debug.Log("[MirrorPanel] 铜镜警告期间安全退出，无事发生");
+                    },
+                    onFail: () => {
+                        // 3秒未退出才真正死亡
+                        OnGhostKill();
+                    }
+                );
             }
         }
     }
@@ -291,14 +309,63 @@ public class MirrorPanel : BasePanel
         }
     }
 
+    // 警告高亮方法
+    public void ShowMirrorWarning(System.Action onSafeExit, System.Action onFail)
+    {
+        if (isWarningActive) return;
+
+        isWarningActive = true;
+        warningSafeExit = onSafeExit;
+        warningFail = onFail;
+
+        SetWarningHighlight(true);
+
+        // 启动3秒警告计时器
+        warningTimerId = TimerMgr.Instance.CreateTimer(false, 3000, () =>
+        {
+            if (isWarningActive)
+            {
+                isWarningActive = false;
+                SetWarningHighlight(false);
+                warningFail?.Invoke();
+            }
+        });
+
+        Debug.Log("[MirrorPanel] 铜镜高亮警告中，3秒内未退出将失败");
+    }
+
+    // 退出时调用
+    public void OnExitMirror()
+    {
+        if (isWarningActive)
+        {
+            isWarningActive = false;
+            SetWarningHighlight(false);
+            if (warningTimerId != 0)
+            {
+                TimerMgr.Instance.RemoveTimer(warningTimerId);
+                warningTimerId = 0;
+            }
+            warningSafeExit?.Invoke();
+        }
+    }
+
+    // 设置高亮
+    private void SetWarningHighlight(bool active)
+    {
+        if (imgMirror != null)
+            imgMirror.color = active ? Color.red : Color.white;
+    }
+
     private void CloseMirrorPanel()
     {
+        OnExitMirror();
         UIMgr.Instance.HidePanel<MirrorPanel>(true);
     }
 
     private IEnumerator FadeCanvasGroup(CanvasGroup cg, float from, float to, float duration, System.Action onComplete = null)
     {
-        if (cg == null) yield break;
+        if (cg == null || cg.gameObject == null) yield break;
 
         cg.alpha = from;
         float elapsed = 0f;
@@ -306,11 +373,17 @@ public class MirrorPanel : BasePanel
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
+            // ⭐ 每帧都检查 cg 是否已被销毁
+            if (cg == null || cg.gameObject == null)
+                yield break;
+
             cg.alpha = Mathf.Lerp(from, to, elapsed / duration);
             yield return null;
         }
 
-        cg.alpha = to;
+        if (cg != null && cg.gameObject != null)
+            cg.alpha = to;
+
         onComplete?.Invoke();
     }
 
@@ -333,6 +406,7 @@ public class MirrorPanel : BasePanel
     {
         StopGazing();
         isShowing = false;
+        OnExitMirror();
         base.HideMe();
     }
 }

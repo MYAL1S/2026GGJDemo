@@ -11,10 +11,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     private const float ScaleNear = 1.25f;
     private const float ScaleFar  = 0.85f;
     private const int   SortingMultiplier = 100;
-    private const int   BaseSortingOrder  = 10; // 基础排序层级
-    /// <summary>
-    /// 乘客最大排序层级（必须低于道具的 100）
-    /// </summary>
+    private const int   BaseSortingOrder  = 10;
     private const int MAX_PASSENGER_SORTING = 90;
 
     public List<Passenger> passengerList;
@@ -23,26 +20,22 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     private readonly List<PassengerSO> tempSpecials = new List<PassengerSO>();
     private readonly Queue<PassengerSO> waitingQueue = new Queue<PassengerSO>();
 
-    // 缓存 GamePanel 引用
     private GamePanel cachedGamePanel;
 
     private PassengerMgr()
     {
         passengerList = new List<Passenger>();
-        // 注册乘客点击事件监听
         EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerClicked, OnPassengerClicked);
-        // 注意：UI 系统不需要 OnUpdate 进行射线检测，使用 IPointerClickHandler 接口
     }
 
     /// <summary>
-    /// 生成一波乘客（受点位容量限制，超出进入等待队列）    
+    /// 生成一波乘客
     /// </summary>
     public void SpawnWave()
     {
         ClearAllPassengers();
         waitingQueue.Clear();
 
-        // 确保 GamePanel 已加载
         UIMgr.Instance.GetPanel<GamePanel>((panel) =>
         {
             cachedGamePanel = panel;
@@ -68,15 +61,24 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
         int ghostCount   = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.ghostCount,  tempGhosts.Count);
         int normalCount  = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.normalPassengerCount, tempNormals.Count);
-        int specialCount = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.specialPassengerCount, tempSpecials.Count);
+        
+        // ⭐ 结合全局配额计算本波实际可生成的特殊乘客数量
+        int waveSpecialCount = GameLevelMgr.Instance.currentLevelDetail.specialPassengerCount;
+        int remainingQuota = GameLevelMgr.Instance.GetRemainingSpecialQuota();
+        int specialCount = Mathf.Min(waveSpecialCount, tempSpecials.Count, remainingQuota);
 
-        // 先生成特殊乘客，占用容量
+        // 先生成特殊乘客
+        int actualSpecialSpawned = 0;
         for (int i = 0; i < specialCount; i++)
         {
             if (capacityLeft <= 0) { waitingQueue.Enqueue(tempSpecials[i]); continue; }
             GeneratePassengerImmediate(tempSpecials[i], spawnPoints[spawnIndex++]);
             capacityLeft--;
+            actualSpecialSpawned++;
         }
+        
+        // ⭐ 回写本波实际生成的特殊乘客数量
+        GameLevelMgr.Instance.AddSpecialSpawned(actualSpecialSpawned);
 
         // 再生成鬼魂
         int gi = 0;
@@ -102,16 +104,10 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             normalsSpawned++;
         }
 
-        // 刷新深度和缩放
         UpdateDepthAndScale();
-
-        // 触发乘客数量变化事件
         NotifyPassengerCountChanged();
     }
 
-    /// <summary>
-    /// 准备乘客候选列表
-    /// </summary>
     private void PrepareCandidates(List<PassengerSO> buffer, bool isGhost)
     {
         buffer.Clear();
@@ -123,9 +119,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         Shuffle(buffer);
     }
 
-    /// <summary>
-    /// 准备特殊乘客候选列表
-    /// </summary>
     private void PrepareSpecialCandidates(List<PassengerSO> buffer)
     {
         buffer.Clear();
@@ -137,9 +130,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         Shuffle(buffer);
     }
 
-    /// <summary>
-    /// 生成乘客（立即生成，用于已获取 GamePanel 后）
-    /// </summary>
     private void GeneratePassengerImmediate(PassengerSO data, Vector3 position)
     {
         if (data == null || cachedGamePanel == null)
@@ -148,7 +138,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         Transform parent = cachedGamePanel.GetPassengerContainer();
         GameObject obj = GameObject.Instantiate(ResourcesMgr.Instance.passengerPrefab, parent);
 
-        // 设置 RectTransform 的锚点位置
         RectTransform rectTransform = obj.GetComponent<RectTransform>();
         if (rectTransform != null)
         {
@@ -162,9 +151,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         passengerList.Add(passenger);
     }
 
-    /// <summary>
-    /// 生成乘客（异步获取 GamePanel）
-    /// </summary>
     private void GeneratePassenger(PassengerSO data, Vector3 position)
     {
         if (data == null)
@@ -179,9 +165,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         });
     }
 
-    /// <summary>
-    /// 清除所有乘客
-    /// </summary>
     public void ClearAllPassengers()
     {
         foreach (var p in passengerList)
@@ -193,32 +176,32 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         NotifyPassengerCountChanged();
     }
 
-    /// <summary>
-    /// 当某乘客被踢出/移除时调用
-    /// </summary>
     public void OnPassengerKicked(Passenger passenger)
     {
-        if (passenger != null)
-            GameObject.Destroy(passenger.gameObject);
-        
-        passengerList.Remove(passenger);
-        
-        // 如果驱逐的是普通乘客，扣除信任度
-        if (!passenger.passengerInfo.isGhost)
+        if (passenger == null) return;
+
+        // 如果是特殊乘客，停止灵能恢复
+        if (passenger.passengerInfo.isSpecialPassenger)
+        {
+            passenger.StopPsychicRestore();
+        }
+
+        // 如果驱逐的是普通乘客（非鬼非特殊），扣除信任度
+        if (!passenger.passengerInfo.isGhost && !passenger.passengerInfo.isSpecialPassenger)
             GameDataMgr.Instance.SubTrustValue(1);
-        
+
         // 如果是鬼魂，播放消散音效
         if (passenger.passengerInfo.isGhost)
             MusicMgr.Instance.PlaySound("Music/26GGJsound/ghost_disappear", false);
-        
+
+        passengerList.Remove(passenger);
+        GameObject.Destroy(passenger.gameObject);
+
         TrySpawnFromWaitingQueue();
         UpdateDepthAndScale();
         NotifyPassengerCountChanged();
     }
 
-    /// <summary>
-    /// 尝试从等待队列补位到空余点位
-    /// </summary>
     private void TrySpawnFromWaitingQueue()
     {
         if (waitingQueue.Count == 0)
@@ -246,9 +229,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         }
     }
 
-    /// <summary>
-    /// 随机打乱列表顺序
-    /// </summary>
     private void Shuffle<T>(List<T> list)
     {
         for (int i = 0; i < list.Count; i++)
@@ -258,27 +238,18 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         }
     }
 
-    /// <summary>
-    /// 当乘客被点击时触发
-    /// </summary>
     private void OnPassengerClicked(Passenger passenger)
     {
-        // 如果交互面板已经显示，不再处理新的点击
         if (PassengerPanel.IsShowing)
             return;
 
-        // 显示乘客交互面板
         UIMgr.Instance.ShowPanel<PassengerPanel>(E_UILayer.Top, (panel) =>
         {
             panel.SetSelectedPassenger(passenger);
-            // 高亮被选中的乘客
             passenger.SetHighlight(true);
         });
     }
 
-    /// <summary>
-    /// 鬼魂靠近事件
-    /// </summary>
     public void GhostApproaching()
     {
         if (passengerList == null || passengerList.Count == 0)
@@ -336,17 +307,11 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         UpdateDepthAndScale();
     }
 
-    /// <summary>
-    /// 停止鬼魂靠近事件
-    /// </summary>
     public void StopGhostApproaching()
     {
         UpdateDepthAndScale();
     }
 
-    /// <summary>
-    /// 按 Y 轴深度刷新排序与缩放（Y 越低越靠前，越大越远）
-    /// </summary>
     private void UpdateDepthAndScale()
     {
         if (passengerList == null || passengerList.Count == 0)
@@ -373,18 +338,13 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             float y = rt != null ? rt.anchoredPosition.y : 0;
             float t = Mathf.InverseLerp(maxY, minY, y);
             float scale = Mathf.Lerp(ScaleFar, ScaleNear, t);
-            
-            // 限制排序层级在安全范围内（5 ~ 90）
             int sorting = Mathf.RoundToInt(Mathf.Lerp(5, MAX_PASSENGER_SORTING, t));
 
             p.transform.localScale = Vector3.one * scale;
-            p.SetSortingOrder(sorting - 5); // SetSortingOrder 会加上 BASE_SORTING_ORDER
+            p.SetSortingOrder(sorting - 5);
         }
     }
 
-    /// <summary>
-    /// 触发乘客数量变化事件
-    /// </summary>
     private void NotifyPassengerCountChanged()
     {
         int count = passengerList?.Count ?? 0;

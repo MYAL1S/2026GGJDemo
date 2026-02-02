@@ -1,8 +1,7 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// 鬼魂渲染系统 - 遮罩方案
+/// 鬼魂渲染系统（简化版 - 透视逻辑已移至 PhoneItem）
 /// </summary>
 public class GhostRenderSystem : BaseSingleton<GhostRenderSystem>
 {
@@ -18,26 +17,13 @@ public class GhostRenderSystem : BaseSingleton<GhostRenderSystem>
 
     public void StartGhostRendering()
     {
-        if (!isInitialized) return;
-
-        var list = PassengerMgr.Instance.passengerList;
-        if (list == null) return;
-
-        foreach (var p in list)
-            p?.SetGhostFeatureVisible(true);
-
-        Debug.Log("[GhostRenderSystem] 开始渲染");
+        if (!isInitialized) Setup();
+        Debug.Log("[GhostRenderSystem] 透视模式开启");
     }
 
     public void StopGhostRendering()
     {
-        var list = PassengerMgr.Instance.passengerList;
-        if (list == null) return;
-
-        foreach (var p in list)
-            p?.SetGhostFeatureVisible(false);
-
-        Debug.Log("[GhostRenderSystem] 停止渲染");
+        Debug.Log("[GhostRenderSystem] 透视模式关闭");
     }
 
     public void Cleanup()

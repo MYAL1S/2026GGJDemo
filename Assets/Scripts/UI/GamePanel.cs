@@ -100,10 +100,16 @@ public class GamePanel : BasePanel
             phoneItem = phoneObj.GetComponent<PhoneItem>();
             if (phoneItem == null)
                 phoneItem = phoneObj.gameObject.AddComponent<PhoneItem>();
-            
-            if (phoneScreenObj != null)
-                phoneItem.SetRenderTextureRoot(phoneScreenObj.gameObject);
-            
+
+            // PhoneScreen 现在是 PhoneItem 的子物体，从子物体查找
+            var phoneScreenTransform = phoneObj.Find("PhoneScreen");
+            if (phoneScreenTransform != null)
+            {
+                phoneScreenObj = phoneScreenTransform;
+                phoneScreenImage = phoneScreenTransform.GetComponent<Image>();
+                phoneItem.SetRenderTextureRoot(phoneScreenTransform.gameObject);
+            }
+
             if (itemConfig != null)
                 phoneItem.SetItemConfig(itemConfig);
         }
@@ -117,30 +123,6 @@ public class GamePanel : BasePanel
             if (itemConfig != null)
                 bellItem.SetItemConfig(itemConfig);
         }
-
-        if (phoneScreenObj != null)
-        {
-            phoneScreenObj.gameObject.SetActive(false);
-            SetupPhoneScreenCanvasSorting();
-        }
-    }
-
-    /// <summary>
-    /// 设置手机屏幕的 Canvas 排序层级
-    /// </summary>
-    private void SetupPhoneScreenCanvasSorting()
-    {
-        if (phoneScreenObj == null)
-            return;
-
-        Canvas phoneCanvas = phoneScreenObj.GetComponent<Canvas>();
-        if (phoneCanvas == null)
-            phoneCanvas = phoneScreenObj.gameObject.AddComponent<Canvas>();
-        phoneCanvas.overrideSorting = true;
-        phoneCanvas.sortingOrder = 100;
-
-        if (phoneScreenObj.GetComponent<GraphicRaycaster>() == null)
-            phoneScreenObj.gameObject.AddComponent<GraphicRaycaster>();
     }
 
     private void InitPlayerData()

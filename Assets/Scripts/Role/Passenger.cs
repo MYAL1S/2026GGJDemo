@@ -20,6 +20,26 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
     private const int BASE_SORTING_ORDER = 5;
     private const int MAX_SORTING_ORDER = 90;
 
+    #region 特殊乘客灵能恢复
+
+    private bool isRestoringPsychic = false;
+    private float psychicRestoreTimer = 0f;
+    
+    [SerializeField]
+    private float psychicRestoreInterval = 2f;
+    
+    [SerializeField]
+    private float maxRestoreDuration = 10f;
+    
+    private float totalRestoreTime = 0f;
+    
+    [SerializeField]
+    private int psychicRestoreAmount = 1;
+    
+    private bool hasLostSpecialAbility = false;
+
+    #endregion
+
     public void Init(PassengerSO passengerSO)
     {
         passengerInfo = passengerSO;
@@ -46,7 +66,80 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
 
         if (GetComponent<GraphicRaycaster>() == null)
             gameObject.AddComponent<GraphicRaycaster>();
+
+        // 初始化特殊乘客灵能恢复
+        InitSpecialPassengerAbility();
     }
+
+    private void InitSpecialPassengerAbility()
+    {
+        if (passengerInfo != null && passengerInfo.isSpecialPassenger && !hasLostSpecialAbility)
+        {
+            StartPsychicRestore();
+        }
+    }
+
+    /// <summary>
+    /// 开始恢复灵能
+    /// </summary>
+    public void StartPsychicRestore()
+    {
+        if (hasLostSpecialAbility) return;
+        if (passengerInfo == null || !passengerInfo.isSpecialPassenger) return;
+
+        isRestoringPsychic = true;
+        psychicRestoreTimer = 0f;
+        totalRestoreTime = 0f;
+        Debug.Log($"[Passenger] {passengerInfo.passengerName} 开始为玩家恢复灵能");
+    }
+
+    /// <summary>
+    /// 停止恢复灵能
+    /// </summary>
+    public void StopPsychicRestore()
+    {
+        if (!isRestoringPsychic) return;
+
+        isRestoringPsychic = false;
+        Debug.Log($"[Passenger] {passengerInfo.passengerName} 停止恢复灵能，已恢复 {totalRestoreTime:F1} 秒");
+    }
+
+    private void Update()
+    {
+        if (!isRestoringPsychic || hasLostSpecialAbility) return;
+
+        totalRestoreTime += Time.deltaTime;
+        psychicRestoreTimer += Time.deltaTime;
+
+        // 每隔一段时间恢复一次灵能
+        if (psychicRestoreTimer >= psychicRestoreInterval)
+        {
+            psychicRestoreTimer = 0f;
+            GameDataMgr.Instance.AddPsychicPower(psychicRestoreAmount);
+            Debug.Log($"[Passenger] {passengerInfo.passengerName} 恢复了 {psychicRestoreAmount} 点灵能");
+        }
+
+        // 达到最大恢复时间，失去特殊能力
+        if (totalRestoreTime >= maxRestoreDuration)
+        {
+            LoseSpecialAbility();
+        }
+    }
+
+    private void LoseSpecialAbility()
+    {
+        if (hasLostSpecialAbility) return;
+
+        hasLostSpecialAbility = true;
+        isRestoringPsychic = false;
+
+        Debug.Log($"[Passenger] {passengerInfo.passengerName} 已失去特殊能力，共恢复了 {totalRestoreTime:F1} 秒");
+        EventCenter.Instance.EventTrigger(E_EventType.E_SpecialPassengerExpired);
+    }
+
+    public bool HasSpecialAbility => passengerInfo != null 
+                                     && passengerInfo.isSpecialPassenger 
+                                     && !hasLostSpecialAbility;
 
     public void SetSortingOrder(int order)
     {
@@ -86,6 +179,7 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
 
     private void OnDestroy()
     {
+        StopPsychicRestore();
         isHighlighted = false;
     }
 }

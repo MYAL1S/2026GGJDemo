@@ -55,4 +55,8 @@ public enum E_EventType
     /// 倒计时更新事件-传入int剩余秒数
     /// </summary>
     E_CountdownUpdate,
+    /// <summary>
+    /// 特殊乘客能力耗尽
+    /// </summary>
+    E_SpecialPassengerExpired,
 }

@@ -1334,7 +1334,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxDragTime: 5
   itemConfig: {fileID: 11400000, guid: fcf36e80c6b9dd446803a76d7824c346, type: 2}
-  renderTextureRoot: {fileID: 0}
+  phoneScreenObj: {fileID: 0}
 --- !u!1 &2935229157551472167
 GameObject:
   m_ObjectHideFlags: 0
@@ -4409,6 +4409,7 @@ GameObject:
   - component: {fileID: 7287020095201325919}
   - component: {fileID: 180597079578577562}
   - component: {fileID: 2814848327745083221}
+  - component: {fileID: 1095444946983374874}
   m_Layer: 5
   m_Name: PhoneScreen
   m_TagString: Untagged
@@ -4473,6 +4474,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1095444946983374874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7786565813038480351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a19414c41e5ae4aae2af33fee712f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShowMaskGraphic: 0
 --- !u!1 &7804935002202038126
 GameObject:
   m_ObjectHideFlags: 0

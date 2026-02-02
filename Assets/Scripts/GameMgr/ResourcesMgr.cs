@@ -20,8 +20,29 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     public List<WaveDetailSO> waveSOList = new List<WaveDetailSO>();
 
     [Header("全局点位配置")]
-    [Tooltip("乘客生成点位（全局通用）")]
+    [Tooltip("乘客生成点位（全局通用）- 目前仍在使用，用于随机选择可用生成点")]
     public List<Vector3> globalPassengerSpawnPoints = new List<Vector3>();
+
+    [Header("乘客位置配置 - 停靠状态")]
+    [Tooltip("电梯停靠时乘客的位置")]
+    public List<Vector2> passengerDockingPositions = new List<Vector2>();
+
+    [Tooltip("电梯停靠时乘客的缩放（如果你改为由容器控制，可保持为 Vector3.one）")]
+    public List<Vector3> passengerDockingScales = new List<Vector3>();
+
+    [Header("乘客位置配置 - 运行状态")]
+    [Tooltip("电梯运行时乘客的位置")]
+    public List<Vector2> passengerMovingPositions = new List<Vector2>();
+
+    [Tooltip("电梯运行时乘客的缩放（如果你改为由容器控制，可保持为 Vector3.one）")]
+    public List<Vector3> passengerMovingScales = new List<Vector3>();
+
+    [Header("乘客容器缩放（全局）")]
+    [Tooltip("乘客父容器在停靠时的缩放（由外部控制父容器）")]
+    public Vector3 passengerContainerDockingScale = Vector3.one;
+
+    [Tooltip("乘客父容器在电梯运行时的缩放（由外部控制父容器）")]
+    public Vector3 passengerContainerMovingScale = Vector3.one;
 
     [Header("电梯时间配置")]
     [Tooltip("电梯运行最短时间（秒）")]
@@ -40,25 +61,25 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     public int elevatorDepartingTime = 5;
 
     // ⭐ 新增配置
-    [Tooltip("第一次电梯停靠时间（秒）")]
+    [Tooltip("第一次停靠时间（秒）")]
     public int firstDockingTime = 10;
 
-    [Tooltip("楼层随机显示延迟时间（秒）")]
+    [Tooltip("楼层随机显示延迟（秒）")]
     public int floorRandomDisplayDelay = 2;
 
-    [Tooltip("楼层随机显示间隔时间（毫秒）")]
+    [Tooltip("楼层随机显示间隔（毫秒）")]
     public int floorRandomDisplayInterval = 100;
 
-    [Tooltip("胜利面板弹出延迟时间（秒）")]
+    [Tooltip("胜利面板弹出延迟（秒）")]
     public int winPanelDelay = 3;
-    [Header("游戏配额")]
+    [Header("游戏配置")]
     /// <summary>
     /// 特殊乘客最大数量
     /// </summary>
     public int maxSpecialPassengerCount;
 
     /// <summary>
-    /// 铜镜最大触发次数
+    /// 铃铛最大触发次数
     /// </summary>
     public int maxMirrorOccourence;
 
@@ -70,12 +91,12 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     [Tooltip("异常事件超时时间（秒）")]
     public int abnormalEventTimeout = 10;
 
-    [Header("铜镜事件配置")]
-    [Tooltip("注视铜镜时被鬼杀死的概率 (0-1)")]
+    [Header("铃铛事件配置")]
+    [Tooltip("注意铃铛时被鬼杀死的概率 (0-1)")]
     [Range(0f, 1f)]
     public float mirrorDeathChance = 0.1f;
-
-    [Tooltip("铜镜死亡判定间隔时间（秒）")]
+    
+    [Tooltip("铃铛死亡判定间隔（秒）")]
     public float mirrorDeathCheckInterval = 2f;
 
     /// <summary>
@@ -133,4 +154,32 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
         if (isGameOver)
             EventMgr.Instance.FallIntoAbyss();
     }
+
+    /// <summary>
+    /// 验证两组配置数据长度是否一致
+    /// </summary>
+    public bool ValidatePassengerPositionConfigs()
+    {
+        int dockingPosCount = passengerDockingPositions.Count;
+        int dockingScaleCount = passengerDockingScales.Count;
+        int movingPosCount = passengerMovingPositions.Count;
+        int movingScaleCount = passengerMovingScales.Count;
+
+        if (dockingPosCount != dockingScaleCount || 
+            dockingPosCount != movingPosCount ||
+            dockingPosCount != movingScaleCount)
+        {
+            Debug.LogError($"[ResourcesMgr] 乘客位置配置数量不一致! " +
+                $"停靠位置:{dockingPosCount}, 停靠缩放:{dockingScaleCount}, " +
+                $"运行位置:{movingPosCount}, 运行缩放:{movingScaleCount}");
+            return false;
+        }
+        
+        return true;
+    }
+
+    /// <summary>
+    /// 获取乘客点位数量
+    /// </summary>
+    public int PassengerSlotCount => passengerDockingPositions.Count;
 }

@@ -1,6 +1,7 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System.Collections;
 
 public class Passenger : MonoBehaviour, IPointerClickHandler
 {
@@ -20,7 +21,7 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
     private const int BASE_SORTING_ORDER = 5;
     private const int MAX_SORTING_ORDER = 90;
 
-    #region ÌØÊâ³Ë¿ÍÁéÄÜ»Ö¸´
+    #region ç‰¹æ®Šä¹˜å®¢çµèƒ½æ¢å¤
 
     private bool isRestoringPsychic = false;
     private float psychicRestoreTimer = 0f;
@@ -41,14 +42,64 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
     #endregion
 
     /// <summary>
-    /// ÊÇ·ñÎª±¾ÂÖĞÂ½øÈëµÄ³Ë¿Í£¨±¾ÂÖ½áËãÌø¹ı£©
+    /// æ˜¯å¦ä¸ºæœ¬è½®æ–°è¿›å…¥çš„ä¹˜å®¢ï¼ˆæœ¬è½®ç»“ç®—è·³è¿‡ï¼‰
     /// </summary>
     public bool isNewThisRound = false;
 
     /// <summary>
-    /// ÊÇ·ñÒÑ¾­½áËã¹ıÉËº¦£¨¹í»êÖ»½áËãÒ»´Î£©
+    /// æ˜¯å¦å·²ç»ç»“ç®—è¿‡ä¼¤å®³ï¼ˆé¬¼é­‚åªç»“ç®—ä¸€æ¬¡ï¼‰
     /// </summary>
     public bool hasDamageSettled = false;
+
+    /// <summary>
+    /// â­ ä¹˜å®¢æ‰€åœ¨çš„æ§½ä½ç´¢å¼•
+    /// </summary>
+    public int SlotIndex { get; set; } = -1;
+
+    /// <summary>
+    /// â­ è®¾ç½®ä½ç½®å’Œç¼©æ”¾
+    /// </summary>
+    public void SetPositionAndScale(Vector2 position, Vector3 scale)
+    {
+        RectTransform rect = GetComponent<RectTransform>();
+        if (rect != null)
+        {
+            rect.anchoredPosition = position;
+            rect.localScale = scale;
+        }
+    }
+
+    /// <summary>
+    /// â­ å¹³æ»‘è¿‡æ¸¡åˆ°ç›®æ ‡ä½ç½®å’Œç¼©æ”¾ï¼ˆå¯é€‰ï¼‰
+    /// </summary>
+    public void TransitionToPositionAndScale(Vector2 targetPos, Vector3 targetScale, float duration = 0.3f)
+    {
+        StartCoroutine(TransitionCoroutine(targetPos, targetScale, duration));
+    }
+
+    private IEnumerator TransitionCoroutine(Vector2 targetPos, Vector3 targetScale, float duration)
+    {
+        RectTransform rect = GetComponent<RectTransform>();
+        if (rect == null) yield break;
+        
+        Vector2 startPos = rect.anchoredPosition;
+        Vector3 startScale = rect.localScale;
+        float elapsed = 0f;
+        
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            rect.anchoredPosition = Vector2.Lerp(startPos, targetPos, t);
+            rect.localScale = Vector3.Lerp(startScale, targetScale, t);
+            
+            yield return null;
+        }
+        
+        rect.anchoredPosition = targetPos;
+        rect.localScale = targetScale;
+    }
 
     public void Init(PassengerSO passengerSO)
     {
@@ -77,7 +128,7 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
         if (GetComponent<GraphicRaycaster>() == null)
             gameObject.AddComponent<GraphicRaycaster>();
 
-        // ³õÊ¼»¯ÌØÊâ³Ë¿ÍÁéÄÜ»Ö¸´
+        // åˆå§‹åŒ–ç‰¹æ®Šä¹˜å®¢çµèƒ½æ¢å¤
         InitSpecialPassengerAbility();
     }
 
@@ -90,7 +141,7 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// ¿ªÊ¼»Ö¸´ÁéÄÜ
+    /// å¼€å§‹æ¢å¤çµèƒ½
     /// </summary>
     public void StartPsychicRestore()
     {
@@ -100,18 +151,18 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
         isRestoringPsychic = true;
         psychicRestoreTimer = 0f;
         totalRestoreTime = 0f;
-        Debug.Log($"[Passenger] {passengerInfo.passengerName} ¿ªÊ¼ÎªÍæ¼Ò»Ö¸´ÁéÄÜ");
+        Debug.Log($"[Passenger] {passengerInfo.passengerName} å¼€å§‹ä¸ºç©å®¶æ¢å¤çµèƒ½");
     }
 
     /// <summary>
-    /// Í£Ö¹»Ö¸´ÁéÄÜ
+    /// åœæ­¢æ¢å¤çµèƒ½
     /// </summary>
     public void StopPsychicRestore()
     {
         if (!isRestoringPsychic) return;
 
         isRestoringPsychic = false;
-        Debug.Log($"[Passenger] {passengerInfo.passengerName} Í£Ö¹»Ö¸´ÁéÄÜ£¬ÒÑ»Ö¸´ {totalRestoreTime:F1} Ãë");
+        Debug.Log($"[Passenger] {passengerInfo.passengerName} åœæ­¢æ¢å¤çµèƒ½ï¼Œå·²æ¢å¤ {totalRestoreTime:F1} ç§’");
     }
 
     private void Update()
@@ -121,15 +172,15 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
         totalRestoreTime += Time.deltaTime;
         psychicRestoreTimer += Time.deltaTime;
 
-        // Ã¿¸ôÒ»¶ÎÊ±¼ä»Ö¸´Ò»´ÎÁéÄÜ
+        // æ¯éš”ä¸€æ®µæ—¶é—´æ¢å¤ä¸€æ¬¡çµèƒ½
         if (psychicRestoreTimer >= psychicRestoreInterval)
         {
             psychicRestoreTimer = 0f;
             GameDataMgr.Instance.AddPsychicPower(psychicRestoreAmount);
-            Debug.Log($"[Passenger] {passengerInfo.passengerName} »Ö¸´ÁË {psychicRestoreAmount} µãÁéÄÜ");
+            Debug.Log($"[Passenger] {passengerInfo.passengerName} æ¢å¤äº† {psychicRestoreAmount} ç‚¹çµèƒ½");
         }
 
-        // ´ïµ½×î´ó»Ö¸´Ê±¼ä£¬Ê§È¥ÌØÊâÄÜÁ¦
+        // è¾¾åˆ°æœ€å¤§æ¢å¤æ—¶é—´ï¼Œå¤±å»ç‰¹æ®Šèƒ½åŠ›
         if (totalRestoreTime >= maxRestoreDuration)
         {
             LoseSpecialAbility();
@@ -143,7 +194,7 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
         hasLostSpecialAbility = true;
         isRestoringPsychic = false;
 
-        Debug.Log($"[Passenger] {passengerInfo.passengerName} ÒÑÊ§È¥ÌØÊâÄÜÁ¦£¬¹²»Ö¸´ÁË {totalRestoreTime:F1} Ãë");
+        Debug.Log($"[Passenger] {passengerInfo.passengerName} å·²å¤±å»ç‰¹æ®Šèƒ½åŠ›ï¼Œå…±æ¢å¤äº† {totalRestoreTime:F1} ç§’");
         EventCenter.Instance.EventTrigger(E_EventType.E_SpecialPassengerExpired);
     }
 
@@ -188,7 +239,7 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// ±ê¼ÇÎª±¾ÂÖĞÂ½øÈë
+    /// æ ‡è®°ä¸ºæœ¬è½®æ–°è¿›å…¥
     /// </summary>
     public void MarkAsNewThisRound()
     {
@@ -196,7 +247,7 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// Çå³ı±¾ÂÖĞÂ½øÈë±ê¼Ç£¨½øÈëÏÂÒ»ÂÖÊ±µ÷ÓÃ£©
+    /// æ¸…é™¤æœ¬è½®æ–°è¿›å…¥æ ‡è®°ï¼ˆè¿›å…¥ä¸‹ä¸€è½®æ—¶è°ƒç”¨ï¼‰
     /// </summary>
     public void ClearNewThisRoundMark()
     {
@@ -204,7 +255,7 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// ±ê¼ÇÒÑ½áËãÉËº¦
+    /// æ ‡è®°å·²ç»“ç®—ä¼¤å®³
     /// </summary>
     public void MarkDamageSettled()
     {

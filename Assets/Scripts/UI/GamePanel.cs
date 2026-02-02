@@ -33,6 +33,10 @@ public class GamePanel : BasePanel
     private Color normalTimeColor = Color.white;
     private Color abnormalTimeColor = Color.red;
 
+    // 新增：保存楼层默认颜色和覆盖标志
+    private Color normalFloorColor = Color.white;
+    private bool isFloorOverridden = false;
+
     public override void Init()
     {
         base.Init();
@@ -43,6 +47,10 @@ public class GamePanel : BasePanel
         if (txtTimeInfo != null)
             normalTimeColor = txtTimeInfo.color;
         
+        // 保存楼层默认颜色
+        if (txtFloor != null)
+            normalFloorColor = txtFloor.color;
+
         phoneScreenImage = GetControl<Image>("PhoneScreen");
         if (phoneScreenImage != null)
             phoneScreenObj = phoneScreenImage.transform;
@@ -204,8 +212,8 @@ public class GamePanel : BasePanel
     /// <summary>
     /// 更新方向UI
     /// - 停止状态：两个箭头都不亮
-    /// - 离开状态：两个箭头都亮
-    /// - 移动/到达状态：根据方向只亮一个
+    /// - 离开时：两个箭头都亮
+    /// - 移动/到达时：根据方向只亮一个
     /// </summary>
     public void UpdateDirectionUI(bool isGoingUp)
     {
@@ -321,6 +329,8 @@ public class GamePanel : BasePanel
 
     /// <summary>
     /// 异常状态变化回调
+    /// - 异常开始时覆盖楼层显示并变红（阻止其他写入）
+    /// - 异常结束时清理覆盖标志并恢复颜色（楼层文本由 ElevatorMgr 恢复）
     /// </summary>
     private void OnAbnormalStateChanged(bool isAbnormal)
     {
@@ -328,6 +338,48 @@ public class GamePanel : BasePanel
         {
             txtTimeInfo.color = isAbnormal ? abnormalTimeColor : normalTimeColor;
         }
+
+        if (txtFloor == null)
+            return;
+
+        if (isAbnormal)
+        {
+            // 开始异常：覆盖楼层显示并阻止外部写入
+            isFloorOverridden = true;
+            SetFloorText("-18");
+            txtFloor.color = Color.red;
+        }
+        else
+        {
+            // 结束异常：清理覆盖标志并恢复颜色，真实楼层由 ElevatorMgr 恢复
+            isFloorOverridden = false;
+            txtFloor.color = normalFloorColor;
+        }
+    }
+
+    /// <summary>
+    /// 尝试设置楼层显示——尊重异常覆盖（若正在覆盖则返回 false）
+    /// </summary>
+    public bool TrySetFloor(int level)
+    {
+        if (isFloorOverridden)
+            return false;
+        SetFloorText(level.ToString());
+        return true;
+    }
+
+    /// <summary>
+    /// 强制设置楼层显示（绕过覆盖保护）
+    /// </summary>
+    public void ForceSetFloor(int level)
+    {
+        SetFloorText(level.ToString());
+    }
+
+    private void SetFloorText(string text)
+    {
+        if (txtFloor != null)
+            txtFloor.text = text;
     }
 
     #endregion

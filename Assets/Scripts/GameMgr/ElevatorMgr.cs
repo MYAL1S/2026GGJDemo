@@ -17,6 +17,8 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     private E_ElevatorState currentElevatorState = E_ElevatorState.Stopped;
     public E_ElevatorState CurrentState => currentElevatorState;
 
+    // 注意：不再直接缓存 txtFloor，使用 GamePanel 的对外接口更新显示
+    // 为兼容部分辅助函数（RefreshUIReferences）仍保留字段声明
     private Text txtFloor;
 
     private int waveNum = 0;
@@ -88,22 +90,19 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         previousLevel = 0;
         currentLevel = 0;
 
+        // 确保 EventMgr 状态被清理（修复：上一局异常未被清理导致重开后无法再触发异常）
+        EventMgr.Instance.ResetState();
+
         EventCenter.Instance.AddEventListener(E_EventType.E_UnnormalEventStart, OnUnnormalEventStart);
         EventCenter.Instance.AddEventListener(E_EventType.E_UnnormalEventResolved, OnUnnormalEventResolved);
 
         MonoMgr.Instance.AddFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
         MonoMgr.Instance.AddUpdateListener(UpdateCountdown);
         
-        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
-        {
-            if (panel != null)
-            {
-                txtFloor = panel.GetControl<Text>("TxtFloor");
-                ChangeLevelUI(18);
-            }
+        // 使用 ChangeLevelUI（会通过 GamePanel 的接口更新）
+        ChangeLevelUI(18);
             
-            EnterInitialDepartingState();
-        });
+        EnterInitialDepartingState();
         
         Debug.Log("[ElevatorMgr] 电梯已启动，游戏开始");
     }
@@ -260,8 +259,16 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
     public void ChangeLevelUI(int level)
     {
-        if (txtFloor != null)
-            txtFloor.text = level.ToString();
+        // 通过 GamePanel 的 TrySetFloor 接口更新楼层，尊重异常覆盖保护
+        UIMgr.Instance.GetPanel<GamePanel>((panel) =>
+        {
+            if (panel == null) return;
+            bool ok = panel.TrySetFloor(level);
+            if (!ok)
+            {
+                // 若被覆盖（异常期间），不覆盖；若确实需要强制写入，可以改为 panel.ForceSetFloor(level)
+            }
+        });
     }
 
     private void ClearActiveTimer()
@@ -303,6 +310,9 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         
         // ⭐ 立即更新显示当前电梯倒计时
         EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, countdownRemaining / 1000);
+
+        // ⭐ 异常结束后立即把楼层 UI 恢复为当前实际楼层（此时 GamePanel 已清理覆盖标志）
+        ChangeLevelUI(currentLevel);
     }
 
     #region 倒计时逻辑
@@ -568,7 +578,9 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
         currentElevatorState = E_ElevatorState.Stopped;
         
-        // ⭐ 判断是否是第一次停靠
+        // ⭐ 切换到停靠位置
+        PassengerMgr.Instance.SwitchToDockingPositions();
+        
         if (isFirstDocking)
         {
             Debug.Log("[ElevatorMgr] 电梯首次停靠（无法与乘客交互）");
@@ -655,9 +667,10 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         Debug.Log("[ElevatorMgr] 电梯正在离开...");
 
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, false);
-        
-        // ⭐ 离开状态：两个箭头都亮
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
+
+        // ⭐ 切换到运行位置
+        PassengerMgr.Instance.SwitchToMovingPositions();
 
         string doorCloseSound = isAbnormalState 
             ? "Music/26GGJsound/elevator_doorclose_abnormal" 

@@ -20,6 +20,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     private readonly Queue<PassengerSO> waitingQueue = new Queue<PassengerSO>();
 
     private GamePanel cachedGamePanel;
+    private Transform passengerContainer; // 缓存父容器引用
 
     private PassengerMgr()
     {
@@ -27,18 +28,22 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerClicked, OnPassengerClicked);
     }
 
+    private bool isInDockingMode = true;  // ⭐ 是否处于停靠模式
+
     /// <summary>
-    /// 生成一波乘客（不清除现有乘客，只在空闲点位生成）
+    /// 生成一波乘客（不清除已有乘客）
     /// </summary>
     public void SpawnWave()
     {
-        // ⭐ 不再清除现有乘客
-        // ClearAllPassengers();
+        // 不再清除现有乘客
         waitingQueue.Clear();
 
         UIMgr.Instance.GetPanel<GamePanel>((panel) =>
         {
             cachedGamePanel = panel;
+            if (cachedGamePanel != null)
+                passengerContainer = cachedGamePanel.GetPassengerContainer(); // 缓存容器引用
+
             DoSpawnWave();
         });
     }
@@ -66,7 +71,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
         Debug.Log($"[PassengerMgr] 候选数量 - 普通:{tempNormals.Count}, 鬼魂:{tempGhosts.Count}, 特殊:{tempSpecials.Count}");
 
-        // 获取当前层的配置数量
+        // 获取当前层配置数量
         int ghostCount = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.ghostCount, tempGhosts.Count);
         int normalCount = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.normalPassengerCount, tempNormals.Count);
         
@@ -74,33 +79,29 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         int remainingQuota = GameLevelMgr.Instance.GetRemainingSpecialQuota();
         int specialCount = Mathf.Min(waveSpecialCount, tempSpecials.Count, remainingQuota);
 
-        // ⭐ 合并所有应该生成的乘客到一个列表
+        // 合并所有应该生成的乘客为一个列表
         List<PassengerSO> mergedList = new List<PassengerSO>();
 
-        // 添加特殊乘客
         for (int i = 0; i < specialCount; i++)
         {
             mergedList.Add(tempSpecials[i]);
         }
 
-        // 添加鬼魂
         for (int i = 0; i < ghostCount; i++)
         {
             mergedList.Add(tempGhosts[i]);
         }
 
-        // 添加普通乘客
         for (int i = 0; i < normalCount; i++)
         {
             mergedList.Add(tempNormals[i]);
         }
 
-        // ⭐ 打乱合并后的列表
         Shuffle(mergedList);
 
         Debug.Log($"[PassengerMgr] 合并后乘客总数: {mergedList.Count}");
 
-        // ⭐ 计算本次要生成的乘客数量
+        // 计算实际生成数量
         int minSpawn = 2;
         int maxSpawn = 4;
         int availableCount = availablePoints.Count;
@@ -109,19 +110,16 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         int spawnCount;
         if (availableCount >= maxSpawn && mergedCount >= minSpawn)
         {
-            // 有足够位置，随机选取 2-4 个
             int upperLimit = Mathf.Min(maxSpawn, mergedCount, availableCount);
             spawnCount = Random.Range(minSpawn, upperLimit + 1);
         }
         else
         {
-            // 位置不足，选取小于等于剩余点位数量的乘客
             spawnCount = Mathf.Min(availableCount, mergedCount);
         }
 
         Debug.Log($"[PassengerMgr] 空闲点位:{availableCount}, 待生成:{mergedCount}, 实际生成:{spawnCount}");
 
-        // ⭐ 生成乘客
         int actualSpecialSpawned = 0;
         int actualGhostSpawned = 0;
         int actualNormalSpawned = 0;
@@ -131,7 +129,6 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             PassengerSO data = mergedList[i];
             GeneratePassengerImmediate(data, availablePoints[i]);
 
-            // 统计生成数量
             if (data.isSpecialPassenger)
                 actualSpecialSpawned++;
             else if (data.isGhost)
@@ -140,10 +137,8 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
                 actualNormalSpawned++;
         }
 
-        // 更新特殊乘客配额
         GameLevelMgr.Instance.AddSpecialSpawned(actualSpecialSpawned);
 
-        // ⭐ 将未生成的乘客加入等待队列
         for (int i = spawnCount; i < mergedList.Count; i++)
         {
             waitingQueue.Enqueue(mergedList[i]);
@@ -152,15 +147,14 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         UpdateDepthAndScale();
         NotifyPassengerCountChanged();
 
-        Debug.Log($"[PassengerMgr] 本波生成：特殊{actualSpecialSpawned}，鬼魂{actualGhostSpawned}，普通{actualNormalSpawned}，等待队列:{waitingQueue.Count}");
+        Debug.Log($"[PassengerMgr] 本波生成：特殊{actualSpecialSpawned}, 鬼魂{actualGhostSpawned}, 普通{actualNormalSpawned}, 等待队列:{waitingQueue.Count}");
     }
 
     /// <summary>
-    /// 获取所有空闲的生成点位（使用全局配置）
+    /// 获取所有空闲生成点（使用全局配置）
     /// </summary>
     private List<Vector3> GetAvailableSpawnPoints()
     {
-        // ⭐ 使用全局点位配置，而不是从 LevelDetailSO 获取
         List<Vector3> allPoints = new List<Vector3>(ResourcesMgr.Instance.globalPassengerSpawnPoints);
         List<Vector3> availablePoints = new List<Vector3>();
 
@@ -175,12 +169,9 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         return availablePoints;
     }
 
-    /// <summary>
-    /// 检查某个点位是否已被占用
-    /// </summary>
     private bool IsPointOccupied(Vector3 point)
     {
-        const float threshold = 10f; // 距离阈值，根据实际情况调整
+        const float threshold = 10f;
 
         foreach (var passenger in passengerList)
         {
@@ -223,6 +214,47 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         Shuffle(buffer);
     }
 
+    /// <summary>
+    /// 生成乘客（使用 slotIndex 的版本）
+    /// 注意：乘客本体 localScale 固定为 Vector3.one，容器整体缩放由 ResourcesMgr 中的两个 Vector3 控制
+    /// </summary>
+    private void GeneratePassengerImmediate(PassengerSO data, int slotIndex)
+    {
+        if (data == null || cachedGamePanel == null)
+            return;
+
+        var config = ResourcesMgr.Instance;
+        if (slotIndex < 0 || slotIndex >= config.PassengerSlotCount)
+        {
+            Debug.LogError($"[PassengerMgr] 无效的槽位索引: {slotIndex}");
+            return;
+        }
+
+        Transform parent = cachedGamePanel.GetPassengerContainer();
+        GameObject obj = GameObject.Instantiate(config.passengerPrefab, parent);
+
+        RectTransform rectTransform = obj.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            // 使用停靠位置生成（位置由配置决定）
+            Vector2 pos = config.passengerDockingPositions[slotIndex];
+
+            rectTransform.anchoredPosition = pos;
+            rectTransform.localRotation = Quaternion.identity;
+            rectTransform.localScale = Vector3.one; // 本体保持 1，由父容器缩放控制
+        }
+
+        Passenger passenger = obj.GetComponent<Passenger>();
+        passenger.Init(data);
+        passenger.SlotIndex = slotIndex;
+        passenger.MarkAsNewThisRound();
+        
+        passengerList.Add(passenger);
+    }
+
+    /// <summary>
+    /// 生成乘客（使用指定位置的版本）
+    /// </summary>
     private void GeneratePassengerImmediate(PassengerSO data, Vector3 position)
     {
         if (data == null || cachedGamePanel == null)
@@ -241,11 +273,87 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
         Passenger passenger = obj.GetComponent<Passenger>();
         passenger.Init(data);
-        
-        // ⭐ 标记为本轮新进入的乘客
         passenger.MarkAsNewThisRound();
         
         passengerList.Add(passenger);
+    }
+
+    /// <summary>
+    /// 切换到停靠位置（并更新容器缩放）
+    /// </summary>
+    public void SwitchToDockingPositions()
+    {
+        if (isInDockingMode) return;
+
+        isInDockingMode = true;
+
+        // 设置容器缩放为停靠缩放
+        if (passengerContainer != null)
+        {
+            passengerContainer.localScale = ResourcesMgr.Instance.passengerContainerDockingScale;
+        }
+
+        UpdateAllPassengerPositions();
+        Debug.Log("[PassengerMgr] 切换到停靠位置");
+    }
+
+    /// <summary>
+    /// 切换到运行位置（并更新容器缩放）
+    /// </summary>
+    public void SwitchToMovingPositions()
+    {
+        if (!isInDockingMode) return;
+
+        isInDockingMode = false;
+
+        // 设置容器缩放为运行时缩放
+        if (passengerContainer != null)
+        {
+            passengerContainer.localScale = ResourcesMgr.Instance.passengerContainerMovingScale;
+        }
+
+        UpdateAllPassengerPositions();
+        Debug.Log("[PassengerMgr] 切换到运行位置");
+    }
+
+    /// <summary>
+    /// 更新所有乘客的位置和本体缩放（本体缩放固定为 Vector3.one）
+    /// </summary>
+    private void UpdateAllPassengerPositions()
+    {
+        if (passengerList == null) return;
+        
+        var config = ResourcesMgr.Instance;
+
+        // 如果容器存在，确保容器缩放与当前模式一致（防止外部未设置）
+        if (passengerContainer != null)
+        {
+            passengerContainer.localScale = isInDockingMode
+                ? config.passengerContainerDockingScale
+                : config.passengerContainerMovingScale;
+        }
+
+        for (int i = 0; i < passengerList.Count; i++)
+        {
+            var passenger = passengerList[i];
+            if (passenger == null || !passenger.gameObject.activeSelf) continue;
+            
+            int slotIndex = passenger.SlotIndex;
+            if (slotIndex < 0 || slotIndex >= config.PassengerSlotCount) continue;
+            
+            Vector2 targetPos;
+            
+            if (isInDockingMode)
+            {
+                targetPos = config.passengerDockingPositions[slotIndex];
+            }
+            else
+            {
+                targetPos = config.passengerMovingPositions[slotIndex];
+            }
+            
+            passenger.SetPositionAndScale(targetPos, Vector3.one); // 本体缩放为 1
+        }
     }
 
     private void GeneratePassenger(PassengerSO data, Vector3 position)
@@ -256,6 +364,9 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         UIMgr.Instance.GetPanel<GamePanel>((panel) =>
         {
             cachedGamePanel = panel;
+            if (cachedGamePanel != null)
+                passengerContainer = cachedGamePanel.GetPassengerContainer();
+
             GeneratePassengerImmediate(data, position);
             UpdateDepthAndScale();
             NotifyPassengerCountChanged();
@@ -273,6 +384,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
                 GameObject.Destroy(p.gameObject);
         }
         passengerList.Clear();
+        isInDockingMode = true;  // ⭐ 重置为停靠模式
         NotifyPassengerCountChanged();
     }
 
@@ -481,10 +593,8 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             RectTransform rt = p.GetComponent<RectTransform>();
             float y = rt != null ? rt.anchoredPosition.y : 0;
             float t = Mathf.InverseLerp(maxY, minY, y);
-            float scale = Mathf.Lerp(ScaleFar, ScaleNear, t);
+            // 不再修改本体 localScale：容器缩放负责显示比例
             int sorting = Mathf.RoundToInt(Mathf.Lerp(5, MAX_PASSENGER_SORTING, t));
-
-            p.transform.localScale = Vector3.one * scale;
             p.SetSortingOrder(sorting - 5);
         }
     }

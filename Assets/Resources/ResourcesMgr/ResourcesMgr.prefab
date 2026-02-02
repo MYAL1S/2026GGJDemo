@@ -74,6 +74,28 @@ MonoBehaviour:
   - {x: 300, y: 0, z: 0}
   - {x: 150, y: 0, z: 0}
   - {x: -150, y: 0, z: 0}
+  passengerDockingPositions:
+  - {x: -300, y: 0}
+  - {x: 300, y: 0}
+  - {x: 150, y: 0}
+  - {x: -150, y: 0}
+  passengerDockingScales:
+  - {x: 1, y: 1, z: 1}
+  - {x: 1, y: 1, z: 1}
+  - {x: 1, y: 1, z: 1}
+  - {x: 1, y: 1, z: 1}
+  passengerMovingPositions:
+  - {x: 450, y: 0}
+  - {x: -450, y: 0}
+  - {x: 200, y: 0}
+  - {x: -200, y: 0}
+  passengerMovingScales:
+  - {x: 1, y: 1, z: 1}
+  - {x: 1, y: 1, z: 1}
+  - {x: 1, y: 1, z: 1}
+  - {x: 1, y: 1, z: 1}
+  passengerContainerDockingScale: {x: 1, y: 1, z: 1}
+  passengerContainerMovingScale: {x: 1.5, y: 1.5, z: 1}
   elevatorMovingTimeMin: 5
   elevatorMovingTimeMax: 5
   elevatorDockingTime: 15
@@ -85,7 +107,7 @@ MonoBehaviour:
   winPanelDelay: 3
   maxSpecialPassengerCount: 2
   maxMirrorOccourence: 1
-  abnormalEventChance: 0.2
+  abnormalEventChance: 1
   abnormalEventTimeout: 10
   mirrorDeathChance: 1
   mirrorDeathCheckInterval: 2

@@ -127,8 +127,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
-  pressedColor: {r: 1, g: 1, b: 1, a: 1}
-  selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
+  pressedColor: {r: 0.46666667, g: 0.53333336, b: 0, a: 1}
+  selectedColor: {r: 0.46546748, g: 0.5345911, b: 0, a: 1}
   selectedBold: 1
   textNameFilter: []
 --- !u!1 &539786620795033333
@@ -670,9 +670,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
-  highlightColor: {r: 1, g: 1, b: 1, a: 1}
-  pressedColor: {r: 1, g: 1, b: 1, a: 1}
-  selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
+  highlightColor: {r: 0, g: 0, b: 0, a: 1}
+  pressedColor: {r: 0.46666667, g: 0.53333336, b: 0, a: 1}
+  selectedColor: {r: 0.46546748, g: 0.5345911, b: 0, a: 1}
   selectedBold: 1
   textNameFilter: []
 --- !u!1 &2004199632549835307
@@ -838,8 +838,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
-  pressedColor: {r: 1, g: 1, b: 1, a: 1}
-  selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
+  pressedColor: {r: 0.46666667, g: 0.53333336, b: 0, a: 1}
+  selectedColor: {r: 0.46546748, g: 0.5345911, b: 0, a: 1}
   selectedBold: 1
   textNameFilter: []
 --- !u!1 &2152701213982991325
@@ -894,8 +894,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
-  pressedColor: {r: 1, g: 1, b: 1, a: 1}
-  selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
+  pressedColor: {r: 0.46666667, g: 0.53333336, b: 0, a: 1}
+  selectedColor: {r: 0.46546748, g: 0.5345911, b: 0, a: 1}
   selectedBold: 1
   textNameFilter: []
 --- !u!1 &2351086370665514201
@@ -932,7 +932,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: 6.4490967, y: -0.39942932}
+  m_AnchoredPosition: {x: 6.4490967, y: -0.39944077}
   m_SizeDelta: {x: 12.8982, y: 83.595}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &8974536714402076627
@@ -1193,7 +1193,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.6509804, g: 0.6509804, b: 0.6509804, a: 1}
+  m_Color: {r: 0.39215687, g: 0.47843137, b: 0.02745098, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2246,7 +2246,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.6509804, g: 0.6509804, b: 0.6509804, a: 1}
+  m_Color: {r: 0.39215687, g: 0.47843137, b: 0.02745098, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3239,7 +3239,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0, y: 2}
-  m_SizeDelta: {x: 0, y: 116.1267}
+  m_SizeDelta: {x: 0, y: 148.4801}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &8524354246930158232
 CanvasRenderer:
@@ -3369,7 +3369,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.6509804, g: 0.6509804, b: 0.6509804, a: 1}
+  m_Color: {r: 0.39215687, g: 0.47843137, b: 0.02745098, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3954,7 +3954,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.6509804, g: 0.6509804, b: 0.6509804, a: 1}
+  m_Color: {r: 0.39215687, g: 0.47843137, b: 0.02745098, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4036,8 +4036,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
-  pressedColor: {r: 1, g: 1, b: 1, a: 1}
-  selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
+  pressedColor: {r: 0.46666667, g: 0.53333336, b: 0, a: 1}
+  selectedColor: {r: 0.46546748, g: 0.5345911, b: 0, a: 1}
   selectedBold: 1
   textNameFilter: []
 --- !u!1 &7485251580347010235
@@ -4077,7 +4077,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: -61.5667}
+  m_SizeDelta: {x: 0, y: -0.000015259}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &1897425948390744893
 CanvasRenderer:
@@ -4236,7 +4236,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0.000015258789}
-  m_SizeDelta: {x: 0, y: 82.7958}
+  m_SizeDelta: {x: 0, y: 67.2698}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &8065999676553729424
 GameObject:
@@ -4369,8 +4369,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
-  pressedColor: {r: 1, g: 1, b: 1, a: 1}
-  selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
+  pressedColor: {r: 0.46666667, g: 0.53333336, b: 0, a: 1}
+  selectedColor: {r: 0.46546748, g: 0.5345911, b: 0, a: 1}
   selectedBold: 1
   textNameFilter: []
 --- !u!1 &8441784736905439859

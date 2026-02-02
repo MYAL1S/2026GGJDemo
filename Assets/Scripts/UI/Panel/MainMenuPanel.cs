@@ -32,7 +32,7 @@ public class MainMenuPanel : BasePanel
                 //隐藏主菜单面板
                 UIMgr.Instance.HidePanel<MainMenuPanel>();
                 //显示制作人员名单面板
-
+                UIMgr.Instance.ShowPanel<DeveloperPanel>();
                 break;
             case "BtnExit":
                 //退出游戏

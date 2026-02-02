@@ -78,9 +78,10 @@ MonoBehaviour:
   elevatorDepartingTime: 10
   floorRandomDisplayDelay: 2
   floorRandomDisplayInterval: 300
+  winPanelDelay: 3
   maxSpecialPassengerCount: 2
   maxMirrorOccourence: 1
-  abnormalEventChance: 0.2
+  abnormalEventChance: 1
   abnormalEventTimeout: 10
   passengerTrustValue: 6
   isGameOver: 0

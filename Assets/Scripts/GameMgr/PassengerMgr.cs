@@ -241,6 +241,10 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
         Passenger passenger = obj.GetComponent<Passenger>();
         passenger.Init(data);
+        
+        // ⭐ 标记为本轮新进入的乘客
+        passenger.MarkAsNewThisRound();
+        
         passengerList.Add(passenger);
     }
 
@@ -499,5 +503,19 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         ClearAllPassengers();
         waitingQueue.Clear();
         Debug.Log("[PassengerMgr] 乘客管理器已重置");
+    }
+
+    /// <summary>
+    /// ⭐ 清除所有乘客的"本轮新进入"标记（结算后调用）
+    /// </summary>
+    public void ClearAllNewThisRoundMarks()
+    {
+        foreach (var passenger in passengerList)
+        {
+            if (passenger != null)
+            {
+                passenger.ClearNewThisRoundMark();
+            }
+        }
     }
 }

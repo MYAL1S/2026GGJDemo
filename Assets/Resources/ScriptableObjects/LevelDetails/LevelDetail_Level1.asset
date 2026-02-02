@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: LevelDetail_Level1
   m_EditorClassIdentifier: 
   passengerSpawnPositionArray:
-  - {x: -0.8, y: -6.5, z: 0}
-  - {x: 1.34, y: -6.44, z: 0}
-  - {x: -2, y: -6, z: 0}
-  - {x: 2.84, y: -6.04, z: 0}
-  - {x: -3.5, y: -5.5, z: 0}
-  - {x: 4.25, y: -5.4, z: 0}
+  - {x: -0.5, y: 0, z: 0}
+  - {x: 0.5, y: 0, z: 0}
+  - {x: 0, y: 0.5, z: 0}
+  - {x: 0, y: -0.5, z: 0}
+  - {x: 0, y: -0.5, z: 0}
+  - {x: 0, y: -0.5, z: 0}
   normalPassengerCount: 3
   ghostCount: 5
   dockingTime: 10
   level: 1
-  specialPassengerCount: 1
+  specialPassengerCount: 2

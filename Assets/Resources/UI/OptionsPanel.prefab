@@ -125,7 +125,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29bb8bf40c217f64b8801f017b623610, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalColor: {r: 0.043137256, g: 0.2, b: 0.7058824, a: 1}
+  normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
@@ -387,7 +387,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.043137256, g: 0.20000002, b: 0.7058824, a: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -669,8 +669,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29bb8bf40c217f64b8801f017b623610, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalColor: {r: 0.043137256, g: 0.2, b: 0.7058824, a: 1}
-  highlightColor: {r: 0, g: 0, b: 0, a: 1}
+  normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
+  highlightColor: {r: 1, g: 1, b: 1, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
   selectedBold: 1
@@ -836,7 +836,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29bb8bf40c217f64b8801f017b623610, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalColor: {r: 0.043137256, g: 0.2, b: 0.7058824, a: 1}
+  normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
@@ -892,7 +892,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29bb8bf40c217f64b8801f017b623610, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalColor: {r: 0.043137256, g: 0.2, b: 0.7058824, a: 1}
+  normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
@@ -1785,7 +1785,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.043137256, g: 0.20000002, b: 0.7058824, a: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3536,7 +3536,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.043137256, g: 0.20000002, b: 0.7058824, a: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4034,7 +4034,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29bb8bf40c217f64b8801f017b623610, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalColor: {r: 0.043137256, g: 0.2, b: 0.7058824, a: 1}
+  normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}
@@ -4367,7 +4367,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 29bb8bf40c217f64b8801f017b623610, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  normalColor: {r: 0.043137256, g: 0.2, b: 0.7058824, a: 1}
+  normalColor: {r: 0.0627451, g: 0.21960786, b: 0.07450981, a: 1}
   highlightColor: {r: 0, g: 0, b: 0, a: 1}
   pressedColor: {r: 1, g: 1, b: 1, a: 1}
   selectedColor: {r: 0.4627451, g: 0.4627451, b: 0.4627451, a: 1}

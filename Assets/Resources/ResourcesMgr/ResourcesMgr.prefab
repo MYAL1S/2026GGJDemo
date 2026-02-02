@@ -81,7 +81,7 @@ MonoBehaviour:
   winPanelDelay: 3
   maxSpecialPassengerCount: 2
   maxMirrorOccourence: 1
-  abnormalEventChance: 1
+  abnormalEventChance: 0.2
   abnormalEventTimeout: 10
   passengerTrustValue: 6
   isGameOver: 0

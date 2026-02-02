@@ -35,7 +35,7 @@ public class GameDataMgr : BaseSingleton<GameDataMgr>
     public int MaxTrustValue { get; private set; } = 6;
 
     // 灵能告警相关
-    private const int LowPsychicThreshold = 2;
+    private const int LowPsychicThreshold = 4;
     private const string LowPsychicSoundPath = "Music/26GGJsound/percentlow";
     private AudioSource lowPsychicLoopSource;
     private bool lowPsychicSoundLoading;

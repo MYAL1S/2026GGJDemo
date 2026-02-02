@@ -73,7 +73,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         isAbnormalState = false;
         isWinPending = false;
         isAbnormalCountdown = false;
-        abnormalCountdownRemaining = 0;  // ⭐ 重置
+        abnormalCountdownRemaining = 0;
 
         GameLevelMgr.Instance.ResetRuntimeCounters();
         PassengerMgr.Instance.ClearAllPassengers();
@@ -89,9 +89,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         MonoMgr.Instance.AddFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
         MonoMgr.Instance.AddUpdateListener(UpdateCountdown);
         
-        // ⭐ 添加调试按键监听
-        MonoMgr.Instance.AddUpdateListener(DebugInput);
-
         UIMgr.Instance.GetPanel<GamePanel>((panel) =>
         {
             if (panel != null)
@@ -155,18 +152,21 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         });
     }
 
+    // 添加字段
+    private bool isGoingUp = true;  // ⭐ 当前电梯方向
+
     /// <summary>
     /// 预先计算下一层信息
     /// </summary>
     private void PrepareNextLevel()
     {
-        // ⭐ 如果胜利待定，目标楼层设为1
+        // 如果胜利待定，目标楼层设为1
         if (isWinPending)
         {
             previousLevel = currentLevel;
             currentLevel = 1;
             
-            bool isGoingUp = currentLevel > previousLevel;
+            isGoingUp = currentLevel > previousLevel;
             EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp);
             Debug.Log($"[ElevatorMgr] 胜利！前往1层 ({(isGoingUp ? "上升" : "下降")})");
             return;
@@ -197,9 +197,10 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         previousLevel = currentLevel;
         currentLevel = currentLevelDetail.level;
 
-        bool isGoingUp2 = currentLevel > previousLevel;
-        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp2);
-        Debug.Log($"[ElevatorMgr] 下一楼层: {currentLevel} ({(isGoingUp2 ? "上升" : "下降")})");
+        // ⭐ 计算方向
+        isGoingUp = currentLevel > previousLevel;
+        
+        Debug.Log($"[ElevatorMgr] 下一楼层: {currentLevel} ({(isGoingUp ? "上升" : "下降")}) [从{previousLevel}层]");
     }
 
     private void StartRandomFloorDisplay()
@@ -460,48 +461,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         }
     }
 
-    /// <summary>
-    /// ⭐ 调试：强制触发胜利流程
-    /// </summary>
-    public void TriggerWinForDebug()
-    {
-        if (!isRunning || isWinPending)
-        {
-            Debug.LogWarning("[ElevatorMgr] 无法触发胜利：电梯未运行或已在胜利流程中");
-            return;
-        }
-
-        Debug.Log("[ElevatorMgr] ⭐ 调试：强制触发胜利流程！");
-        
-        // 设置胜利待定状态
-        isWinPending = true;
-        
-        // 解决异常状态（如果有）
-        if (isAbnormalState)
-        {
-            isAbnormalState = false;
-            MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience_norml");
-            EventCenter.Instance.EventTrigger<bool>(E_EventType.E_AbnormalStateChanged, false);
-        }
-    }
-
-    /// <summary>
-    /// ⭐ 调试：强制触发失败流程
-    /// </summary>
-    public void TriggerLoseForDebug()
-    {
-        if (!isRunning)
-        {
-            Debug.LogWarning("[ElevatorMgr] 无法触发失败：电梯未运行");
-            return;
-        }
-
-        Debug.Log("[ElevatorMgr] ⭐ 调试：强制触发失败流程！");
-        
-        StopElevator();
-        EventMgr.Instance.FallIntoAbyss();
-    }
-
     public void StopElevator()
     {
         if (!isRunning) return;
@@ -510,15 +469,13 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         isAbnormalState = false;
         isWinPending = false;
         isAbnormalCountdown = false;
-        abnormalCountdownRemaining = 0;  // ⭐ 重置
+        abnormalCountdownRemaining = 0;
 
         EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventStart, OnUnnormalEventStart);
         EventCenter.Instance.RemoveEventListener(E_EventType.E_UnnormalEventResolved, OnUnnormalEventResolved);
         MonoMgr.Instance.RemoveUpdateListener(UpdateCountdown);
         MonoMgr.Instance.RemoveFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
         
-        MonoMgr.Instance.RemoveUpdateListener(DebugInput);
-
         ClearActiveTimer();
         
         countdownRemaining = 0;
@@ -528,26 +485,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         ClearDelayTimer();
 
         Debug.Log("[ElevatorMgr] 电梯已停止");
-    }
-
-    /// <summary>
-    /// ⭐ 调试输入检测
-    /// </summary>
-    private void DebugInput()
-    {
-        if (!isRunning) return;
-
-        // 按 V 键触发胜利流程
-        if (Input.GetKeyDown(KeyCode.V))
-        {
-            TriggerWinForDebug();
-        }
-        
-        // 按 L 键触发失败流程（可选）
-        if (Input.GetKeyDown(KeyCode.L))
-        {
-            TriggerLoseForDebug();
-        }
     }
 
     private ElevatorMgr()
@@ -563,12 +500,14 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState = E_ElevatorState.Moving;
         Debug.Log("[ElevatorMgr] 电梯开始运行...");
 
+        // ⭐ 移动状态更新方向箭头
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp);
+
         var config = ResourcesMgr.Instance;
         int minTime = config.elevatorMovingTimeMin * 1000;
         int maxTime = config.elevatorMovingTimeMax * 1000;
         int movingDuration = Random.Range(minTime, maxTime + 1);
         
-        // 移动+到达合并显示
         int arrivingDuration = config.elevatorArrivingTime * 1000;
         int totalDuration = movingDuration + arrivingDuration;
         StartCountdown(totalDuration);
@@ -601,6 +540,9 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState = E_ElevatorState.Arriving;
         Debug.Log("[ElevatorMgr] 电梯即将到达...");
 
+        // ⭐ 到达状态保持方向箭头
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp);
+
         int arrivingDuration = ResourcesMgr.Instance.elevatorArrivingTime * 1000;
 
         activeTimerId = TimerMgr.Instance.CreateTimer(false, arrivingDuration, () =>
@@ -628,6 +570,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState = E_ElevatorState.Stopped;
         Debug.Log("[ElevatorMgr] 电梯已停靠");
 
+        // ⭐ 停靠状态：两个箭头都不亮
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, true);
 
@@ -689,6 +632,8 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         Debug.Log("[ElevatorMgr] 电梯正在离开...");
 
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, false);
+        
+        // ⭐ 离开状态：两个箭头都亮
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
 
         string doorCloseSound = isAbnormalState 

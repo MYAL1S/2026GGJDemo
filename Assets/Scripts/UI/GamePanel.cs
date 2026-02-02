@@ -205,7 +205,7 @@ public class GamePanel : BasePanel
     /// 更新方向UI
     /// - 停止状态：两个箭头都不亮
     /// - 离开状态：两个箭头都亮
-    /// - 其他运行状态：根据方向只亮一个
+    /// - 移动/到达状态：根据方向只亮一个
     /// </summary>
     public void UpdateDirectionUI(bool isGoingUp)
     {
@@ -214,19 +214,25 @@ public class GamePanel : BasePanel
         switch (currentState)
         {
             case E_ElevatorState.Stopped:
-                // 停靠时两个箭头都不亮
+                // ⭐ 停靠时两个箭头都不亮
                 SetArrowsVisible(false, false);
                 break;
                 
             case E_ElevatorState.Departing:
-                // ? 离开时两个箭头都亮
+                // ⭐ 离开时两个箭头都亮
                 SetArrowsVisible(true, true);
                 break;
                 
             case E_ElevatorState.Moving:
             case E_ElevatorState.Arriving:
+                // ⭐ 运行/到达时根据方向显示
+                // isGoingUp=true 表示上升，显示上箭头
+                // isGoingUp=false 表示下降，显示下箭头
+                SetArrowsVisible(isGoingUp, !isGoingUp);
+                break;
+                
             case E_ElevatorState.Abnormal:
-                // 运行时根据方向显示
+                // 异常状态保持当前方向
                 SetArrowsVisible(isGoingUp, !isGoingUp);
                 break;
         }

@@ -288,23 +288,21 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// </summary>
     public void SwitchToDockingPositions()
     {
-        // 1. 即使当前已经是 true，如果容器为空，也需要尝试获取引用并设置缩放
-        // 所以我们修改了判断逻辑，去掉了直接 return
-        if (isInDockingMode && passengerContainer != null) return;
-
-        isInDockingMode = true;
-
-        // 2. 确保拿到引用
+        // 如果容器为空，尝试获取
         EnsureContainerReference();
 
-        if (passengerContainer != null)
+        // ⭐【修复】如果获取失败（比如场景切换时 GamePanel 还没准备好），直接返回，不要报错！
+        if (passengerContainer == null)
         {
-            passengerContainer.localScale = ResourcesMgr.Instance.passengerContainerDockingScale;
-            Debug.Log($"[PassengerMgr] 设置PassengerContainer为停靠缩放: {ResourcesMgr.Instance.passengerContainerDockingScale}");
+            Debug.LogWarning("[PassengerMgr] 容器未找到，跳过 SwitchToDockingPositions");
+            return;
         }
 
+        if (isInDockingMode) return; // 状态没变就不做
+
+        isInDockingMode = true;
+        passengerContainer.localScale = ResourcesMgr.Instance.passengerContainerDockingScale;
         UpdateAllPassengerPositions();
-        Debug.Log("[PassengerMgr] 切换到停靠位置");
     }
 
     /// <summary>
@@ -390,6 +388,9 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// <summary>
     /// 清除所有乘客（仅在游戏重新开始时调用）
     /// </summary>
+    /// <summary>
+    /// 清除所有乘客（仅在游戏重新开始时调用）
+    /// </summary>
     public void ClearAllPassengers()
     {
         foreach (var p in passengerList)
@@ -398,7 +399,13 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
                 GameObject.Destroy(p.gameObject);
         }
         passengerList.Clear();
-        isInDockingMode = true;  // ⭐ 重置为停靠模式
+        isInDockingMode = true;
+
+        // ⭐【新增】强制置空 UI 引用，强迫下一局重新获取
+        // 这样可以防止持有上一局已销毁的 GamePanel 引用导致报错卡死
+        passengerContainer = null;
+        cachedGamePanel = null;
+
         NotifyPassengerCountChanged();
     }
 

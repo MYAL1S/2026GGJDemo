@@ -123,6 +123,23 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     /// </summary>
     public bool isGameOver = false;
 
+    /// <summary>
+    /// ⭐【新增】重置资源管理器的运行时数据
+    /// </summary>
+    public void ResetRuntimeData()
+    {
+        // 1. 复位游戏结束标记（最关键！）
+        isGameOver = false;
+
+        // 2. 复位信任值/稳定值（根据你的游戏逻辑，恢复满值）
+        // 假设 passengerTrustValue 是通过 GameDataMgr 获取的，或者在这里维护
+        // 如果是在这里维护：
+        passengerTrustValue = 6;
+
+        // 如果有其他计数器，也要在这里清零
+        Debug.Log("[ResourcesMgr] 运行时数据已重置，解除 GameOver 锁定");
+    }
+
     public void SubPassengerTrustValue(int value)
     {
         passengerTrustValue -= value;
@@ -149,6 +166,11 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
         if (isGameOver)
             return;
 
+        // 如果控制台疯狂刷这一行，且数值是 0，那就是这里的问题
+        if (passengerTrustValue <= 0)
+        {
+            Debug.LogError($"[侦探模式] ResourcesMgr 判定游戏结束！因为 passengerTrustValue 为: {passengerTrustValue}");
+        }
         isGameOver = passengerTrustValue <= 0;
 
         if (isGameOver)

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class OptionsPanel : BasePanel
@@ -101,13 +102,17 @@ public class OptionsPanel : BasePanel
         isPanelShowing = true;
         isFadingOut = false;
         panelCanvasGroup.alpha = 0;
-        
-        // ? 检查是否从游戏中打开
-        openedFromGame = ElevatorMgr.Instance.CurrentState != E_ElevatorState.Stopped || 
-                         UIMgr.Instance.IsPanelShowing<GamePanel>();
-        
-        // ? 暂停游戏
-        Time.timeScale = 0f;
+
+        // [修改] 既然已经分了 BeginScene 和 GameScene，直接用场景名判断最安全
+        // 如果当前场景不是 "BeginScene"，那肯定就是在游戏中
+        string currentScene = SceneManager.GetActiveScene().name;
+        openedFromGame = currentScene != "BeginScene";
+
+        // ? 暂停游戏 (如果在游戏中)
+        if (openedFromGame)
+        {
+            Time.timeScale = 0f;
+        }
     }
 
     public override void HideMe()
@@ -194,16 +199,17 @@ public class OptionsPanel : BasePanel
             case "BtnExit":
                 SettingsApplier.ApplyAll(GameDataMgr.Instance.SettingInfo);
                 HideMe();
-                
+
                 // ? 根据来源返回不同面板
                 if (openedFromGame)
                 {
-                    // 从游戏中打开，直接返回游戏（GamePanel 还在）
-                    // 不需要做任何事情
+                    // 从游戏中打开，恢复时间并返回
+                    Time.timeScale = 1f;
                 }
                 else
                 {
-                    // 从主菜单打开，显示主菜单
+                    // 从主菜单打开，确保恢复时间（防止意外）并显示主菜单
+                    Time.timeScale = 1f;
                     UIMgr.Instance.ShowPanel<MainMenuPanel>();
                 }
                 break;

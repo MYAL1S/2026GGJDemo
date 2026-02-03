@@ -19,4 +19,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 72d575246411b374b873a09b9ce6cb5f, type: 2}
   - {fileID: 11400000, guid: 890ac8b9e52609f43ae7b8cc28a544e2, type: 2}
   - {fileID: 11400000, guid: 72e0ef21681ca3f44b907f182b7c7e4c, type: 2}
-  createMirrorLevelIndex: 03000000
+  createMirrorLevelIndex: 
+  mirrorEvents: []

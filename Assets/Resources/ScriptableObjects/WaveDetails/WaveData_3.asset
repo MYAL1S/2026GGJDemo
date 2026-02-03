@@ -20,4 +20,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 074843524cd19fc42b4ecf9f2fff4f9c, type: 2}
   - {fileID: 11400000, guid: f301ac8a7ee33d44d8ca4ee3c97cfa2d, type: 2}
   - {fileID: 11400000, guid: 812aa137294cb524ba3d3d8db56493d9, type: 2}
-  createMirrorLevelIndex: 03000000
+  createMirrorLevelIndex: 
+  mirrorEvents:
+  - levelIndex: 5
+    triggerDelay: 4

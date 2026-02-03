@@ -433,7 +433,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         passengerList.Remove(passenger);
         GameObject.Destroy(passenger.gameObject);
 
-        TrySpawnFromWaitingQueue();
+        //TrySpawnFromWaitingQueue();
         UpdateDepthAndScale();
         NotifyPassengerCountChanged();
     }

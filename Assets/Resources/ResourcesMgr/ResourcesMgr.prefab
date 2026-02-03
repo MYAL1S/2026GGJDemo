@@ -66,6 +66,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ab5f57509bf106c46a841632376ffd1c, type: 2}
   waveSOList:
   - {fileID: 11400000, guid: 89c6e8fba526770479762d9c2cd77fd7, type: 2}
+  - {fileID: 11400000, guid: 55c2a79652379ef41b334002f6e5bf70, type: 2}
+  - {fileID: 11400000, guid: f3383d193ac2f0a4ab5593b58e2632ce, type: 2}
+  - {fileID: 11400000, guid: 43b321b774eec3e479207c4d7699d816, type: 2}
+  - {fileID: 11400000, guid: 84d9b7fe06a0a414fa900cd0cd83dab0, type: 2}
   globalPassengerSpawnPoints:
   - {x: -300, y: 0, z: 0}
   - {x: -400, y: 0, z: 0}
@@ -114,7 +118,7 @@ MonoBehaviour:
   winPanelDelay: 3
   maxSpecialPassengerCount: 2
   maxMirrorOccourence: 1
-  abnormalEventChance: 1
+  abnormalEventChance: 0.2
   abnormalEventTimeout: 10
   mirrorDeathChance: 0.4
   mirrorDeathCheckInterval: 2

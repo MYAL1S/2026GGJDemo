@@ -253,7 +253,10 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         passenger.Init(data);
         passenger.SlotIndex = slotIndex;
         passenger.MarkAsNewThisRound();
-        
+
+        // ⭐ 新增：调用淡入
+        passenger.FadeIn(0.5f);
+
         passengerList.Add(passenger);
     }
 
@@ -431,7 +434,11 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             MusicMgr.Instance.PlaySound("Music/26GGJsound/ghost_disappear", false);
 
         passengerList.Remove(passenger);
-        GameObject.Destroy(passenger.gameObject);
+        passenger.FadeOut(0.5f, () =>
+        {
+            if (passenger != null && passenger.gameObject != null)
+                GameObject.Destroy(passenger.gameObject);
+        });
 
         //TrySpawnFromWaitingQueue();
         UpdateDepthAndScale();
@@ -465,9 +472,13 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
 
         // 从列表中移除
         passengerList.Remove(ghost);
-        
+
         // 销毁游戏对象
-        GameObject.Destroy(ghost.gameObject);
+        ghost.FadeOut(0.5f, () =>
+        {
+            if (ghost != null && ghost.gameObject != null)
+                GameObject.Destroy(ghost.gameObject);
+        });
 
         // ⭐ 只有在电梯停靠状态才尝试补位
         if (ElevatorMgr.Instance.CurrentState == E_ElevatorState.Stopped)

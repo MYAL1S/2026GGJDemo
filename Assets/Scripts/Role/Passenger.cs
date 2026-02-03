@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections;
+using System;
 
 public class Passenger : MonoBehaviour, IPointerClickHandler
 {
@@ -17,6 +18,11 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
     private Color originalColor = Color.white;
     private bool isHighlighted = false;
     private Canvas canvas;
+
+    /// <summary>
+    /// 控制乘客UI透明度
+    /// </summary>
+    private CanvasGroup canvasGroup;
 
     private const int BASE_SORTING_ORDER = 5;
     private const int MAX_SORTING_ORDER = 90;
@@ -108,8 +114,12 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
         mainRender.sprite = passengerSO.normalSprite;
         mainRender.SetNativeSize();
 
+        // 设置阈值为 0.1，意味着透明度低于 10% 的区域将不再响应点击，而是穿透过去
+        mainRender.alphaHitTestMinimumThreshold = 0.1f;
+
         if (ghostFeatureRenderer != null)
         {
+
             ghostFeatureRenderer.sprite = passengerSO.isGhost
                 ? passengerSO.ghostSprite
                 : passengerSO.normalSprite;
@@ -118,6 +128,11 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
         }
 
         originalColor = mainRender.color;
+
+        // ⭐ 2. 初始化 CanvasGroup 并设为透明
+        canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
         canvas = GetComponent<Canvas>();
         if (canvas == null)
@@ -128,8 +143,61 @@ public class Passenger : MonoBehaviour, IPointerClickHandler
         if (GetComponent<GraphicRaycaster>() == null)
             gameObject.AddComponent<GraphicRaycaster>();
 
+        // 初始设为 0 (完全透明)，等待调用 FadeIn
+        canvasGroup.alpha = 0f;
+
         // 初始化特殊乘客灵能恢复
         InitSpecialPassengerAbility();
+    }
+
+    // ⭐ 3. 新增：淡入方法
+    public void FadeIn(float duration = 0.5f)
+    {
+        if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+        // 确保物体是激活的
+        gameObject.SetActive(true);
+        StartCoroutine(FadeRoutine(0f, 1f, duration, null));
+    }
+
+
+    // ⭐ 4. 新增：淡出方法
+    public void FadeOut(float duration = 0.5f, Action onComplete = null)
+    {
+        if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
+
+        // 禁用交互，防止淡出过程中被再次点击
+        canvasGroup.blocksRaycasts = false;
+
+        if (gameObject.activeInHierarchy)
+        {
+            StartCoroutine(FadeRoutine(canvasGroup.alpha, 0f, duration, onComplete));
+        }
+        else
+        {
+            onComplete?.Invoke();
+        }
+    }
+
+    // ⭐ 5. 新增：淡入淡出协程
+    private IEnumerator FadeRoutine(float startAlpha, float endAlpha, float duration, Action onComplete)
+    {
+        float timer = 0f;
+        if (canvasGroup != null) canvasGroup.alpha = startAlpha;
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            float t = Mathf.Clamp01(timer / duration);
+
+            if (canvasGroup != null)
+                canvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, t);
+
+            yield return null;
+        }
+
+        if (canvasGroup != null) canvasGroup.alpha = endAlpha;
+
+        onComplete?.Invoke();
     }
 
     private void InitSpecialPassengerAbility()

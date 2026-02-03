@@ -120,7 +120,7 @@ MonoBehaviour:
   maxMirrorOccourence: 1
   abnormalEventChance: 0.2
   abnormalEventTimeout: 10
-  mirrorDeathChance: 0.4
+  mirrorDeathChance: 0.3
   mirrorDeathCheckInterval: 2
   passengerTrustValue: 6
   isGameOver: 0

@@ -122,6 +122,25 @@ public class GameOverPanel : BasePanel
                 Time.timeScale = 1f;
                 MusicMgr.Instance.StopBKMusic();
                 MusicMgr.Instance.ClearSound();  // ⭐ 清理音效
+
+                // ⭐⭐⭐【必须添加以下重置代码】⭐⭐⭐
+                // 如果不加这些，上一局的异常状态和计时器会带入下一局，导致卡死
+
+                // 1. 停止电梯（清理电梯内部计时器和状态）
+                ElevatorMgr.Instance.StopElevator();
+
+                // 2. 重置事件管理器（清除异常状态标记，这是最关键的！）
+                EventMgr.Instance.ResetState();
+
+                // 3. 清理乘客
+                PassengerMgr.Instance.ClearAllPassengers();
+
+                // 4. 重置游戏数据
+                GameDataMgr.Instance.ResetGameData();
+                GameLevelMgr.Instance.ResetRuntimeCounters();
+
+                // ⭐⭐⭐【结束添加】⭐⭐⭐
+
                 UIMgr.Instance.ClearAllPanels();
                 SceneMgr.Instance.LoadSceneAsync("BeginScene", () =>
                 {

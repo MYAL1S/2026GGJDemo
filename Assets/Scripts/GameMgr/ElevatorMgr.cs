@@ -64,6 +64,10 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     private bool isGoingUp = true;  // ⭐ 当前电梯方向
     private bool isFirstDocking = true;  // ⭐ 是否是第一次停靠
 
+    // 新增：当前铜镜事件配置与定时器ID列表
+    private List<MirrorEventConfig> currentMirrorEvents = new List<MirrorEventConfig>();
+    private List<int> mirrorEventTimerIds = new List<int>();
+
     /// <summary>
     /// 启动电梯
     /// </summary>
@@ -117,8 +121,9 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         ClearActiveTimer();
 
         currentElevatorState = E_ElevatorState.Departing;
-        
+
         Debug.Log("[ElevatorMgr] 游戏开始 - 电梯正在离开初始楼层...");
+        PassengerMgr.Instance.SwitchToMovingPositions();
 
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, false);
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
@@ -197,6 +202,18 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
         previousLevel = currentLevel;
         currentLevel = currentLevelDetail.level;
+
+        // 记录本波铜镜事件配置
+        currentMirrorEvents.Clear();
+        mirrorEventTimerIds.Clear();
+        if (currentWave != null && currentWave.mirrorEvents != null)
+        {
+            foreach (var evt in currentWave.mirrorEvents)
+            {
+                if (evt.levelIndex == currentLevelIndex)
+                    currentMirrorEvents.Add(evt);
+            }
+        }
 
         // ⭐ 计算方向
         isGoingUp = currentLevel > previousLevel;
@@ -490,7 +507,17 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         MonoMgr.Instance.RemoveFixedUpdateListener(GameDataMgr.Instance.CheckPsychicPowerWarning);
         
         ClearActiveTimer();
-        
+
+        // ⭐⭐⭐【新增】清理铜镜事件的残留计时器 ⭐⭐⭐
+        if (mirrorEventTimerIds != null)
+        {
+            foreach (var timerId in mirrorEventTimerIds)
+            {
+                TimerMgr.Instance.RemoveTimer(timerId);
+            }
+            mirrorEventTimerIds.Clear();
+        }
+
         countdownRemaining = 0;
         EventCenter.Instance.EventTrigger<int>(E_EventType.E_CountdownUpdate, 0);
         
@@ -511,6 +538,7 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
         // ⭐ 移动状态更新方向箭头
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, isGoingUp);
+
 
         var config = ResourcesMgr.Instance;
         int minTime = config.elevatorMovingTimeMin * 1000;
@@ -620,17 +648,17 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
         PassengerMgr.Instance.SpawnWave();
 
-        // ⭐ 只有非第一次停靠才触发铜镜事件
-        if (!isFirstDocking)
-        {
-            bool canTriggerMirror = pendingMirrorEvent && GameLevelMgr.Instance.TryConsumeMirrorOccurence();
-            if (canTriggerMirror)
-            {
-                UIMgr.Instance.ShowPanel<MirrorPanel>(E_UILayer.Top);
-                Debug.Log("[ElevatorMgr] 触发铜镜事件");
-            }
-        }
-        pendingMirrorEvent = false;
+        //// ⭐ 只有非第一次停靠才触发铜镜事件
+        //if (!isFirstDocking)
+        //{
+        //    bool canTriggerMirror = pendingMirrorEvent && GameLevelMgr.Instance.TryConsumeMirrorOccurence();
+        //    if (canTriggerMirror)
+        //    {
+        //        UIMgr.Instance.ShowPanel<MirrorPanel>(E_UILayer.Top);
+        //        Debug.Log("[ElevatorMgr] 触发铜镜事件");
+        //    }
+        //}
+        //pendingMirrorEvent = false;
 
         // ⭐ 根据是否第一次停靠使用不同的停靠时间
         int dockingDuration = isFirstDocking 
@@ -669,7 +697,6 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDoorStateChanged, false);
         EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
 
-        // ⭐ 切换到运行位置
         PassengerMgr.Instance.SwitchToMovingPositions();
 
         string doorCloseSound = isAbnormalState 
@@ -679,14 +706,17 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
         int departingDuration = ResourcesMgr.Instance.elevatorDepartingTime * 1000;
         StartCountdown(departingDuration);
-        
+
         StartRandomFloorDisplay();
+
+        // ⭐ 安排铜镜事件（可有多个）
+        ScheduleMirrorEvents();
 
         activeTimerId = TimerMgr.Instance.CreateTimer(false, departingDuration, () =>
         {
             activeTimerId = 0;
             StopCountdown();
-            
+
             StopRandomFloorDisplay();
 
             if (!isRunning) return;
@@ -709,5 +739,27 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     private ElevatorMgr()
     {
         // 私有构造函数，防止外部实例化
+    }
+
+    private void ScheduleMirrorEvents()
+    {
+        // 清理上一次的定时器
+        foreach (var timerId in mirrorEventTimerIds)
+        {
+            TimerMgr.Instance.RemoveTimer(timerId);
+        }
+        mirrorEventTimerIds.Clear();
+
+        foreach (var evt in currentMirrorEvents)
+        {
+            float delay = Mathf.Max(0, evt.triggerDelay);
+            int timerId = TimerMgr.Instance.CreateTimer(false, (int)(delay * 1000), () =>
+            {
+                if (!isRunning || currentElevatorState != E_ElevatorState.Departing) return;
+                UIMgr.Instance.ShowPanel<MirrorPanel>(E_UILayer.Top);
+                Debug.Log($"[ElevatorMgr] 铜镜事件触发：楼层{evt.levelIndex}，延迟{evt.triggerDelay}秒");
+            });
+            mirrorEventTimerIds.Add(timerId);
+        }
     }
 }

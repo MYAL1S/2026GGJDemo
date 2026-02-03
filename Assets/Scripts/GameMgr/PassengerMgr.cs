@@ -53,16 +53,17 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// </summary>
     private void DoSpawnWave()
     {
-        List<Vector3> availablePoints = GetAvailableSpawnPoints();
-        
-        if (availablePoints.Count == 0)
+        // 只用当前模式的点位
+        List<int> availableIndices = GetAvailableSpawnIndices(isInDockingMode);
+
+        if (availableIndices.Count == 0)
         {
-            Debug.Log("[PassengerMgr] 没有空闲点位，无法生成新乘客");
+            Debug.Log("[PassengerMgr] 没有空闲点位");
             NotifyPassengerCountChanged();
             return;
         }
 
-        Shuffle(availablePoints);
+        Shuffle(availableIndices); // 洗牌索引
 
         // 准备候选乘客
         PrepareCandidates(tempNormals, isGhost: false);
@@ -104,7 +105,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         // 计算实际生成数量
         int minSpawn = 2;
         int maxSpawn = 4;
-        int availableCount = availablePoints.Count;
+        int availableCount = availableIndices.Count;
         int mergedCount = mergedList.Count;
 
         int spawnCount;
@@ -127,7 +128,7 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         for (int i = 0; i < spawnCount; i++)
         {
             PassengerSO data = mergedList[i];
-            GeneratePassengerImmediate(data, availablePoints[i]);
+            GeneratePassengerImmediate(data, availableIndices[i]);
 
             if (data.isSpecialPassenger)
                 actualSpecialSpawned++;
@@ -150,23 +151,27 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         Debug.Log($"[PassengerMgr] 本波生成：特殊{actualSpecialSpawned}, 鬼魂{actualGhostSpawned}, 普通{actualNormalSpawned}, 等待队列:{waitingQueue.Count}");
     }
 
-    /// <summary>
-    /// 获取所有空闲生成点（使用全局配置）
-    /// </summary>
-    private List<Vector3> GetAvailableSpawnPoints()
+    // 替换原有的 GetAvailableSpawnPoints 方法
+    private List<int> GetAvailableSpawnIndices(bool isDocking)
     {
-        List<Vector3> allPoints = new List<Vector3>(ResourcesMgr.Instance.globalPassengerSpawnPoints);
-        List<Vector3> availablePoints = new List<Vector3>();
+        List<int> availableIndices = new List<int>();
+        int totalSlots = ResourcesMgr.Instance.PassengerSlotCount;
 
-        foreach (var point in allPoints)
+        for (int i = 0; i < totalSlots; i++)
         {
-            if (!IsPointOccupied(point))
+            // 动态获取当前模式下的坐标来检测占用
+            Vector2 pos2D = isDocking
+                ? ResourcesMgr.Instance.passengerDockingPositions[i]
+                : ResourcesMgr.Instance.passengerMovingPositions[i];
+
+            Vector3 checkPos = new Vector3(pos2D.x, pos2D.y, 0f);
+
+            if (!IsPointOccupied(checkPos))
             {
-                availablePoints.Add(point);
+                availableIndices.Add(i);
             }
         }
-
-        return availablePoints;
+        return availableIndices;
     }
 
     private bool IsPointOccupied(Vector3 point)
@@ -283,14 +288,19 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// </summary>
     public void SwitchToDockingPositions()
     {
-        if (isInDockingMode) return;
+        // 1. 即使当前已经是 true，如果容器为空，也需要尝试获取引用并设置缩放
+        // 所以我们修改了判断逻辑，去掉了直接 return
+        if (isInDockingMode && passengerContainer != null) return;
 
         isInDockingMode = true;
 
-        // 设置容器缩放为停靠缩放
+        // 2. 确保拿到引用
+        EnsureContainerReference();
+
         if (passengerContainer != null)
         {
             passengerContainer.localScale = ResourcesMgr.Instance.passengerContainerDockingScale;
+            Debug.Log($"[PassengerMgr] 设置PassengerContainer为停靠缩放: {ResourcesMgr.Instance.passengerContainerDockingScale}");
         }
 
         UpdateAllPassengerPositions();
@@ -302,14 +312,18 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// </summary>
     public void SwitchToMovingPositions()
     {
-        if (!isInDockingMode) return;
+        // 1. 同理，防止引用为空时操作失效
+        if (!isInDockingMode && passengerContainer != null) return;
 
         isInDockingMode = false;
 
-        // 设置容器缩放为运行时缩放
+        // 2. 确保拿到引用
+        EnsureContainerReference();
+
         if (passengerContainer != null)
         {
             passengerContainer.localScale = ResourcesMgr.Instance.passengerContainerMovingScale;
+            Debug.Log($"[PassengerMgr] 设置PassengerContainer为运行缩放: {ResourcesMgr.Instance.passengerContainerMovingScale}");
         }
 
         UpdateAllPassengerPositions();
@@ -466,19 +480,25 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
     /// <summary>
     /// 尝试从等待队列补位到空余点位
     /// </summary>
+    /// <summary>
+    /// 尝试从等待队列补位到空余点位
+    /// </summary>
     private void TrySpawnFromWaitingQueue()
     {
         if (waitingQueue.Count == 0)
             return;
 
-        List<Vector3> availablePoints = GetAvailableSpawnPoints();
-        
-        foreach (var point in availablePoints)
+        // ⭐ 修复：使用新的索引获取方法，而不是旧的 Vector3 方法
+        List<int> availableIndices = GetAvailableSpawnIndices(isInDockingMode);
+
+        foreach (var index in availableIndices)
         {
             if (waitingQueue.Count == 0) break;
-            
+
             var data = waitingQueue.Dequeue();
-            GeneratePassengerImmediate(data, point);
+
+            // ⭐ 修复：使用传入 index 的重载方法，确保新补位的乘客也有 SlotIndex
+            GeneratePassengerImmediate(data, index);
         }
 
         UpdateDepthAndScale();
@@ -626,6 +646,25 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
             {
                 passenger.ClearNewThisRoundMark();
             }
+        }
+    }
+
+    /// <summary>
+    /// 辅助方法：确保拥有容器的引用
+    /// </summary>
+    private void EnsureContainerReference()
+    {
+        if (passengerContainer == null)
+        {
+            // 尝试从 UI管理器获取 GamePanel 并拿到容器引用
+            UIMgr.Instance.GetPanel<GamePanel>((panel) =>
+            {
+                if (panel != null)
+                {
+                    cachedGamePanel = panel;
+                    passengerContainer = panel.GetPassengerContainer();
+                }
+            });
         }
     }
 }

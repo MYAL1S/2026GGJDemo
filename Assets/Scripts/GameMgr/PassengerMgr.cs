@@ -75,8 +75,23 @@ public class PassengerMgr : BaseSingleton<PassengerMgr>
         // 获取当前层配置数量
         int ghostCount = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.ghostCount, tempGhosts.Count);
         int normalCount = Mathf.Min(GameLevelMgr.Instance.currentLevelDetail.normalPassengerCount, tempNormals.Count);
-        
-        int waveSpecialCount = GameLevelMgr.Instance.currentLevelDetail.specialPassengerCount;
+
+        //int waveSpecialCount = GameLevelMgr.Instance.currentLevelDetail.specialPassengerCount;
+
+        int waveSpecialCount = 0;
+
+        // 1. 移除了之前的 (ElevatorMgr.Instance.CurrentWaveIndex > 0) 判断，现在所有波次逻辑一致
+        // 2. 检查是否是指定的特殊层级
+        if (ElevatorMgr.Instance.ShouldSpawnSpecialPassenger)
+        {
+            // 3. 按照需求：出现时只会一次一个
+            waveSpecialCount = 1;
+            Debug.Log($"[PassengerMgr] 当前是特殊乘客生成层 (Wave层级索引: {ElevatorMgr.Instance.ShouldSpawnSpecialPassenger})，生成 1 个特殊乘客");
+        }
+        else
+        {
+            waveSpecialCount = 0;
+        }
         int remainingQuota = GameLevelMgr.Instance.GetRemainingSpecialQuota();
         int specialCount = Mathf.Min(waveSpecialCount, tempSpecials.Count, remainingQuota);
 

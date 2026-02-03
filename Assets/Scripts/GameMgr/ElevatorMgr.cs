@@ -21,6 +21,8 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
     private int waveNum = 0;
     private int levelNum = 0;
 
+    public int CurrentWaveIndex => waveNum;
+
     private WaveDetailSO currentWave;
     private LevelDetailSO currentLevelDetail;
     private int currentLevelIndex;
@@ -681,6 +683,18 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
                 UIMgr.Instance.ShowPanel<MirrorPanel>(E_UILayer.Top);
             });
             mirrorEventTimerIds.Add(timerId);
+        }
+    }
+
+    public bool ShouldSpawnSpecialPassenger
+    {
+        get
+        {
+            if (currentWave == null) return false;
+
+            // 检查当前层索引是否等于配置的生成索引
+            // 注意：这里会引用你在第一步中添加的变量 specialPassengerSpawnIndex
+            return currentLevelIndex == currentWave.specialPassengerSpawnIndex;
         }
     }
 }

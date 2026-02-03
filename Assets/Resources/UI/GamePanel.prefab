@@ -1177,7 +1177,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6fb546f3bc5fa384aa673e1679ba9149, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxDragTime: 5
+  maxDragTime: 2
   itemConfig: {fileID: 11400000, guid: fcf36e80c6b9dd446803a76d7824c346, type: 2}
   phoneScreenObj: {fileID: 0}
 --- !u!1 &2935229157551472167

@@ -24,3 +24,4 @@ MonoBehaviour:
   mirrorEvents:
   - levelIndex: 5
     triggerDelay: 4
+  specialPassengerSpawnIndex: 4

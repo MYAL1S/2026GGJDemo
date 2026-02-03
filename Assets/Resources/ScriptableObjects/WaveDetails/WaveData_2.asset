@@ -20,3 +20,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7f23ac925365b02418a27aa3a8106413, type: 2}
   createMirrorLevelIndex: 
   mirrorEvents: []
+  specialPassengerSpawnIndex: 2

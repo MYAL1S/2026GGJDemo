@@ -21,6 +21,6 @@ MonoBehaviour:
   - {x: 0, y: -0.5, z: 0}
   normalPassengerCount: 6
   ghostCount: 2
-  dockingTime: 60
+  dockingTime: 10
   level: 17
   specialPassengerCount: 1

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ItemConfig
   m_EditorClassIdentifier: 
   phonePsychicCost: 1
-  phoneMaxDragTime: 5
+  phoneMaxDragTime: 2
   bellPsychicCost: 1
   bellDetectionRadius: 50
   bellMaxDragTime: 5

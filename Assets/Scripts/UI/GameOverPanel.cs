@@ -99,7 +99,7 @@ public class GameOverPanel : BasePanel
     public void ShowResult(bool isWin)
     {
         if (txtResult != null)
-            txtResult.text = isWin ? "You Win!" : "Game Over!";
+            txtResult.text = isWin ? "恭喜你驱逐了电梯中所有的鬼，并将乘客安全送到了一楼" : "很遗憾，因为你错误的决断，你坠入了异界";
     }
 
     protected override void Update()

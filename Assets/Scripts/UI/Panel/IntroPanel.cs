@@ -8,6 +8,7 @@ public class IntroPanel : BasePanel
     private Image imgIntro1;
     private Image imgIntro2;
     private Image imgIntro3;
+    private Image imgIntro4;
     private Image nowIntro;
 
     public override void Init()
@@ -16,8 +17,10 @@ public class IntroPanel : BasePanel
         imgIntro1 = GetControl<Image>("ImgIntro1");
         imgIntro2 = GetControl<Image>("ImgIntro2");
         imgIntro3 = GetControl<Image>("ImgIntro3");
+        imgIntro4 = GetControl<Image>("ImgIntro4");
         imgIntro2.gameObject.SetActive(false);
         imgIntro3.gameObject.SetActive(false);
+        imgIntro4.gameObject.SetActive(false);
         nowIntro = imgIntro1;
     }
 
@@ -62,6 +65,10 @@ public class IntroPanel : BasePanel
                 nowIntro = imgIntro3;
                 break;
             case "ImgIntro3":
+                imgIntro4.gameObject.SetActive(true);
+                nowIntro = imgIntro4;
+                break;
+            case "ImgIntro4":
                 // 重置所有游戏数据
                 ResetAllGameData();
 

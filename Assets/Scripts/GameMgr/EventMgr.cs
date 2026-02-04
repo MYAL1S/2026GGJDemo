@@ -13,7 +13,6 @@ public class EventMgr : BaseSingleton<EventMgr>
 
     private int abnormalCountdownRemaining;
 
-
     public void StartWatchMirror()
     {
         if (timerID != 0)

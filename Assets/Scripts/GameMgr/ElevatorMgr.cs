@@ -594,15 +594,19 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
             return;
         }
 
-        // ⭐⭐⭐【防弹修复 3】生成乘客保护 ⭐⭐⭐
-        try
+        TimerMgr.Instance.CreateTimer(false, 500, () =>
         {
-            PassengerMgr.Instance.SpawnWave();
-        }
-        catch (System.Exception e)
-        {
-            UnityEngine.Debug.LogError($"[ElevatorMgr] 生成乘客失败: {e.Message}");
-        }
+            // ⭐⭐⭐【防弹修复 3】生成乘客保护 ⭐⭐⭐
+            try
+            {
+                PassengerMgr.Instance.SpawnWave();
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogError($"[ElevatorMgr] 生成乘客失败: {e.Message}");
+            }
+        });
+
 
         // ⭐⭐⭐ 核心：无论上面报不报错，这行代码必须执行，否则电梯就卡死了！ ⭐⭐⭐
         int dockingDuration = isFirstDocking

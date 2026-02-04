@@ -276,6 +276,7 @@ GameObject:
   - component: {fileID: 6180118174198274720}
   - component: {fileID: 2471372658936368263}
   - component: {fileID: 6187684544409921897}
+  - component: {fileID: 1335214589791780581}
   m_Layer: 5
   m_Name: BellItem
   m_TagString: Untagged
@@ -354,6 +355,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxDragTime: 5
   itemConfig: {fileID: 11400000, guid: fcf36e80c6b9dd446803a76d7824c346, type: 2}
+--- !u!95 &1335214589791780581
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1133753700610391256}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 2486e8b77c0783a4d927f6c0161c28e5, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1306811998940654556
 GameObject:
   m_ObjectHideFlags: 0

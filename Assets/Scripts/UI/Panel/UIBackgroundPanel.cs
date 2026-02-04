@@ -7,6 +7,10 @@ public class UIBackgroundPanel : BasePanel
 {
     private Image doorLeft;
     private Image doorRight;
+    /// <summary>
+    /// 门的动画组件
+    /// </summary>
+    private Animator dooraAnimator;
 
     public override void Init()
     {
@@ -15,18 +19,14 @@ public class UIBackgroundPanel : BasePanel
         // 获取左右门
         doorLeft = GetControl<Image>("DoorLeft");
         doorRight = GetControl<Image>("DoorRight");
-        
+
+        // 获取门的动画组件
+        dooraAnimator = GetComponent<Animator>();
+
         // 监听电梯门状态变化
         EventCenter.Instance.AddEventListener<bool>(E_EventType.E_ElevatorDoorStateChanged, OnDoorStateChanged);
     }
 
-    public override void ShowMe()
-    {
-        base.ShowMe();
-        
-        // 显示时初始化门为关闭状态（显示门）
-        SetDoorsVisible(true);
-    }
 
     /// <summary>
     /// 电梯门状态变化回调
@@ -34,28 +34,14 @@ public class UIBackgroundPanel : BasePanel
     /// <param name="isOpen">true=开门（隐藏门），false=关门（显示门）</param>
     private void OnDoorStateChanged(bool isOpen)
     {
-        // 开门时隐藏门，关门时显示门
-        SetDoorsVisible(!isOpen);
+        dooraAnimator.SetBool("isDoorOpen", isOpen);
     }
 
-    /// <summary>
-    /// 设置门的可见性
-    /// </summary>
-    private void SetDoorsVisible(bool visible)
-    {
-        if (doorLeft != null)
-            doorLeft.gameObject.SetActive(visible);
-        if (doorRight != null)
-            doorRight.gameObject.SetActive(visible);
-        
-        Debug.Log($"[UIBackgroundPanel] 电梯门: {(visible ? "关闭(显示)" : "开启(隐藏)")}");
-    }
 
-    public override void HideMe()
+    private void OnDestroy()
     {
         // 移除事件监听
         EventCenter.Instance.RemoveEventListener<bool>(E_EventType.E_ElevatorDoorStateChanged, OnDoorStateChanged);
-        base.HideMe();
     }
 
     /// <summary>

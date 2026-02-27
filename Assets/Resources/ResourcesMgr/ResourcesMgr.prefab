@@ -107,12 +107,12 @@ MonoBehaviour:
   - {x: 1, y: 1, z: 1}
   passengerContainerDockingScale: {x: 1.5, y: 1.5, z: 1}
   passengerContainerMovingScale: {x: 1.8, y: 1.8, z: 1}
-  elevatorMovingTimeMin: 5
-  elevatorMovingTimeMax: 5
-  elevatorDockingTime: 15
+  elevatorMovingTimeMin: 3
+  elevatorMovingTimeMax: 3
+  elevatorDockingTime: 5
   elevatorArrivingTime: 3
   elevatorDepartingTime: 10
-  firstDockingTime: 5
+  firstDockingTime: 1
   floorRandomDisplayDelay: 2
   floorRandomDisplayInterval: 300
   winPanelDelay: 3

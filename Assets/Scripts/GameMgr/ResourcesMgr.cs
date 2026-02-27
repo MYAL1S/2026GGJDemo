@@ -61,6 +61,9 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     public int elevatorDepartingTime = 5;
 
     // ⭐ 新增配置
+    [Tooltip("第一次到达时间(秒)")]
+    public int firstArrivingTime = 2; // 单位：秒（举例，实际可在 Inspector 配置）
+
     [Tooltip("第一次停靠时间（秒）")]
     public int firstDockingTime = 10;
 

@@ -107,11 +107,15 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
 
         ChangeLevelUI(18);
 
-        EnterInitialDepartingState();
+        //EnterInitialDepartingState();
+        EnterInitialArrivingState();
 
         UnityEngine.Debug.Log("[ElevatorMgr] 游戏启动 - 状态重置完成");
     }
 
+    /// <summary>
+    /// 原本的逻辑 第一次进入电梯应该处于离开状态
+    /// </summary>
     private void EnterInitialDepartingState()
     {
         if (!isRunning) return;
@@ -156,6 +160,45 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
             PrepareNextLevel();
             ChangeLevelUI(currentLevel);
             EnterMovingState();
+        });
+    }
+
+    /// <summary>
+    /// 新的逻辑 一进入电梯就处于到达状态，直接停靠，玩家没有任何操作机会，直接进入下一层
+    /// </summary>
+    private void EnterInitialArrivingState()
+    {
+        if (!isRunning) return;
+
+        ClearActiveTimer();
+
+        currentElevatorState = E_ElevatorState.Arriving;
+        UnityEngine.Debug.Log("[ElevatorMgr] 进入初始Arriving状态");
+
+        EventCenter.Instance.EventTrigger<bool>(E_EventType.E_ElevatorDirectionChanged, true);
+
+        // 使用单独配置的首次Arriving时间
+        int arrivingDuration = ResourcesMgr.Instance.firstArrivingTime * 1000;
+        StartCountdown(arrivingDuration);
+
+        activeTimerId = TimerMgr.Instance.CreateTimer(false, arrivingDuration, () =>
+        {
+            activeTimerId = 0;
+            StopCountdown();
+
+            if (!isRunning) return;
+
+            // 可选：播放到达音效
+            try
+            {
+                string beepSound = isAbnormalState
+                    ? "Music/26GGJsound/elevator_beep_abnormal"
+                    : "Music/26GGJsound/elevator_beep";
+                MusicMgr.Instance.PlaySound(beepSound, false);
+            }
+            catch { }
+
+            EnterStoppedState();
         });
     }
 

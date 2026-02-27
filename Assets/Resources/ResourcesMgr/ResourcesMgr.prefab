@@ -112,6 +112,7 @@ MonoBehaviour:
   elevatorDockingTime: 5
   elevatorArrivingTime: 3
   elevatorDepartingTime: 10
+  firstArrivingTime: 3
   firstDockingTime: 1
   floorRandomDisplayDelay: 2
   floorRandomDisplayInterval: 300

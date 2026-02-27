@@ -61,14 +61,14 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     public int elevatorDepartingTime = 5;
 
     // ⭐ 新增配置
-    [Tooltip("第一次到达时间(秒)")]
-    public int firstArrivingTime = 2; // 单位：秒（举例，实际可在 Inspector 配置）
+    [Tooltip("第一次到达时间/ArrivingTime(秒)")]
+    public int firstArrivingTime = 3; // 单位：秒（举例，实际可在 Inspector 配置）
 
-    [Tooltip("第一次停靠时间（秒）")]
+    [Tooltip("第一次停靠时间/StoppedTime(秒）")]
     public int firstDockingTime = 10;
 
     [Tooltip("楼层随机显示延迟（秒）")]
-    public int floorRandomDisplayDelay = 2;
+    public int floorRandomDisplayDelay = 3;
 
     [Tooltip("楼层随机显示间隔（毫秒）")]
     public int floorRandomDisplayInterval = 100;
@@ -94,12 +94,12 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     [Tooltip("异常事件超时时间（秒）")]
     public int abnormalEventTimeout = 10;
 
-    [Header("铃铛事件配置")]
-    [Tooltip("注意铃铛时被鬼杀死的概率 (0-1)")]
+    [Header("铜镜事件配置")]
+    [Tooltip("注释铜镜时被鬼杀死的概率 (0-1)")]
     [Range(0f, 1f)]
     public float mirrorDeathChance = 0.1f;
     
-    [Tooltip("铃铛死亡判定间隔（秒）")]
+    [Tooltip("铜镜死亡判定间隔（秒）")]
     public float mirrorDeathCheckInterval = 2f;
 
     /// <summary>

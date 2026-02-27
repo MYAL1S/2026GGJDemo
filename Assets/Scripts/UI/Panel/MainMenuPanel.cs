@@ -6,6 +6,12 @@ using UnityEngine.UI;
 
 public class MainMenuPanel : BasePanel
 {
+    public override void ShowMe()
+    {
+        base.ShowMe();
+        MusicMgr.Instance.PlayBKMuic("Music/26GGJsound/elevator_ambience_norml");
+    }
+
     protected override Selectable GetDefaultSelectable()
     {
         return GetControl<Button>("BtnGameStart");

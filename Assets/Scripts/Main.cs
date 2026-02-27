@@ -15,7 +15,7 @@ public class Main : MonoBehaviour
         // 初始化鬼魂渲染系统
         GhostRenderSystem.Instance.Setup();
         
-        UIMgr.Instance.ShowPanel<LoginPanel>(E_UILayer.Middle, (panel) =>
+        UIMgr.Instance.ShowPanel<MainMenuPanel>(E_UILayer.Middle, (panel) =>
         {
             GameObject go = ResMgr.Instance.Load<GameObject>("ResourcesMgr/ResourcesMgr");
             GameObject reallyObj = Instantiate(go);

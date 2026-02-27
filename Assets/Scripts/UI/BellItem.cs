@@ -274,25 +274,27 @@ public class BellItem : DraggableItem
 
     private void OnBellHitPassenger(Passenger passenger)
     {
-        if (!GameDataMgr.Instance.ConsumePsychicPower(psychicCost))
-        {
-            Debug.Log("[BellItem] 灵能值不足");
-            return;
-        }
-
         if (passenger.passengerInfo.isGhost)
         {
+            //那么直接驱散鬼魂 不扣除灵能值
             Debug.Log("[BellItem] 检测到鬼魂，将其驱散");
             OnGhostDispelled(passenger);
         }
         else
         {
+            //如果是普通乘客 不去减少灵能值 而是扣除稳定值
+            GameDataMgr.Instance.SubTrustValue(1);
             Debug.Log("[BellItem] 检测到普通乘客，无事发生");
         }
     }
 
+    /// <summary>
+    /// 鬼魂被驱散的处理逻辑
+    /// </summary>
+    /// <param name="ghost">鬼魂乘客对象</param>
     private void OnGhostDispelled(Passenger ghost)
     {
+        //播放驱散音效，移除鬼魂对象
         MusicMgr.Instance.PlaySound("Music/26GGJsound/ghost_disappear", false);
         PassengerMgr.Instance.DispelGhost(ghost);
         Debug.Log("[BellItem] 鬼魂已被驱散");

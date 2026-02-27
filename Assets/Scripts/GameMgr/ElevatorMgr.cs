@@ -50,7 +50,11 @@ public class ElevatorMgr : BaseSingleton<ElevatorMgr>
         currentElevatorState == E_ElevatorState.Departing ||
         isAbnormalState;
 
-    public bool CanInteractPassengers => currentElevatorState == E_ElevatorState.Stopped && !isFirstDocking;
+    //之前的处理是：停靠状态且不是第一次停靠才允许交互乘客
+    //如果是停靠状态，且不是第一次停靠（第一次停靠没有乘客），才允许交互乘客
+    //public bool CanInteractPassengers => currentElevatorState == E_ElevatorState.Stopped && !isFirstDocking;
+    // 现在改成：任何时候都不允许交互乘客，彻底禁止乘客交互逻辑，简化逻辑
+    public bool CanInteractPassengers => false;
 
     private float floorDisplayTimer = 0f;
     private bool isRandomDisplaying = false;

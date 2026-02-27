@@ -356,8 +356,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -70.470474}
-  m_SizeDelta: {x: 1062.4866, y: 882.1694}
+  m_AnchoredPosition: {x: 0, y: -84.693}
+  m_SizeDelta: {x: 1062.4866, y: 910.61}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2078617797440946641
 CanvasRenderer:
@@ -400,7 +400,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "Cttt\n\nFrogO2\n\n\u8C03\u60C5 dy:58167548137\r\n\u50CF\u7D20\u753B\u753B\u753B\uFF0C\u753B\u5230\u538C\u5026\uFF01\n\nnightglow\n\nsalktosound\n\nTONG"
+  m_Text: "\u7F8E\u672F-Cttt\n\n\u7A0B\u5E8F-FrogO2\n\n\u7F8E\u672F-\u8C03\u60C5\ndy:58167548137\r\n\u50CF\u7D20\u753B\u753B\u753B\uFF0C\u753B\u5230\u538C\u5026\uFF01\n\n\u7A0B\u5E8F-nightglow\n\n\u97F3\u6548-salktosound\n\n\u7B56\u5212-TONG"
 --- !u!1 &9067636600950370405
 GameObject:
   m_ObjectHideFlags: 0

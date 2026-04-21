@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[Obsolete("已被弃用， 新版采用遮罩实现效果")]
 public class CamFollow : MonoBehaviour
 {
     private Camera assignedCamera; // Assign the camera in the Inspector

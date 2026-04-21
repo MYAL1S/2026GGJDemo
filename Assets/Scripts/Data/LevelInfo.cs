@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,6 +6,7 @@ using UnityEngine;
 /// <summary>
 /// 关卡信息类 记录每一波关卡的信息
 /// </summary>
+[Obsolete("已弃用 请使用LevelDetailSO")]
 public class LevelInfo
 {
     /// <summary>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,6 +6,7 @@ using UnityEngine;
 /// <summary>
 /// 面具信息类
 /// </summary>
+[Obsolete("MaskInfo 类已过时，请使用新的手机系统")]
 public class MaskInfo
 {
     /// <summary>

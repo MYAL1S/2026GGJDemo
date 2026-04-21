@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,6 +6,7 @@ using UnityEngine;
 /// <summary>
 /// 电梯信息类
 /// </summary>
+[Obsolete("已弃用 由GameDataMgr统一管理")]
 public class ElevatorInfo
 {
     /// <summary>

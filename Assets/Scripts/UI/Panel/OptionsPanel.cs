@@ -4,13 +4,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+/// <summary>
+/// 设置面板类，负责显示和管理游戏设置界面，允许玩家调整分辨率、全屏模式、VSync 以及音量等设置
+/// </summary>
 public class OptionsPanel : BasePanel
 {
-    private float alphaSpeed = 5f;
-    private bool isPanelShowing = false;
-    private CanvasGroup panelCanvasGroup;
-    private bool isFadingOut = false;
-
     /// <summary>
     /// OptionsPanel 排序层级
     /// </summary>
@@ -27,10 +25,6 @@ public class OptionsPanel : BasePanel
     {
         base.Init();
         
-        panelCanvasGroup = GetComponent<CanvasGroup>();
-        if (panelCanvasGroup == null)
-            panelCanvasGroup = gameObject.AddComponent<CanvasGroup>();
-
         SetupCanvasSorting();
         SetupBlockingMask();
 
@@ -43,8 +37,13 @@ public class OptionsPanel : BasePanel
         GetControl<Slider>("SliderFXVolume").value = GameDataMgr.Instance.SettingInfo.fxVolume;
     }
 
+    /// <summary>
+    /// 设置 Canvas 排序层级，确保 OptionsPanel 在所有 UI 之上显示
+    /// </summary>
     private void SetupCanvasSorting()
     {
+        //如果已经有 Canvas 组件了，就直接设置排序
+        //如果没有，就添加一个新的 Canvas 组件并设置排序
         Canvas canvas = GetComponent<Canvas>();
         if (canvas == null)
             canvas = gameObject.AddComponent<Canvas>();
@@ -52,10 +51,14 @@ public class OptionsPanel : BasePanel
         canvas.overrideSorting = true;
         canvas.sortingOrder = PANEL_SORTING_ORDER;
 
+        // 确保有 GraphicRaycaster 组件，否则 UI 交互会失效
         if (GetComponent<GraphicRaycaster>() == null)
             gameObject.AddComponent<GraphicRaycaster>();
     }
 
+    /// <summary>
+    /// 设置遮罩层，阻挡底层 UI 的交互，确保玩家只能与设置面板进行交互
+    /// </summary>
     private void SetupBlockingMask()
     {
         Transform existingMask = transform.Find("BlockingMask");
@@ -92,6 +95,10 @@ public class OptionsPanel : BasePanel
         maskImage.raycastTarget = true;
     }
 
+    /// <summary>
+    /// 设置默认选中项为分辨率下拉框，方便玩家直接调整分辨率设置
+    /// </summary>
+    /// <returns></returns>
     protected override Selectable GetDefaultSelectable()
     {
         return GetControl<Dropdown>("DropDownResolution");
@@ -99,52 +106,20 @@ public class OptionsPanel : BasePanel
 
     public override void ShowMe()
     {
-        isPanelShowing = true;
-        isFadingOut = false;
-        panelCanvasGroup.alpha = 0;
+        base.ShowMe();
 
         // [修改] 既然已经分了 BeginScene 和 GameScene，直接用场景名判断最安全
         // 如果当前场景不是 "BeginScene"，那肯定就是在游戏中
         string currentScene = SceneManager.GetActiveScene().name;
         openedFromGame = currentScene != "BeginScene";
 
-        // ? 暂停游戏 (如果在游戏中)
+        // 暂停游戏 (如果在游戏中)
         if (openedFromGame)
         {
             Time.timeScale = 0f;
         }
     }
 
-    public override void HideMe()
-    {
-        isPanelShowing = false;
-        isFadingOut = true;
-    }
-
-    protected override void Update()
-    {
-        // 淡入
-        if (isPanelShowing && panelCanvasGroup.alpha < 1)
-        {
-            panelCanvasGroup.alpha += alphaSpeed * Time.unscaledDeltaTime;
-            if (panelCanvasGroup.alpha >= 1)
-                panelCanvasGroup.alpha = 1;
-        }
-        // 淡出
-        else if (isFadingOut && panelCanvasGroup.alpha > 0)
-        {
-            panelCanvasGroup.alpha -= alphaSpeed * Time.unscaledDeltaTime;
-            if (panelCanvasGroup.alpha <= 0)
-            {
-                panelCanvasGroup.alpha = 0;
-                isFadingOut = false;
-                
-                // ? 恢复游戏
-                Time.timeScale = 1f;
-                UIMgr.Instance.HidePanel<OptionsPanel>();
-            }
-        }
-    }
 
     protected override void OnDropDownValueChanged(string name, int value)
     {
@@ -197,39 +172,54 @@ public class OptionsPanel : BasePanel
                 MusicMgr.Instance.PlaySound("Music/FX/TapeButton", false);
                 break;
             case "BtnExit":
+                //防止遗漏，在退出前再次应用设置，确保玩家的调整生效
                 SettingsApplier.ApplyAll(GameDataMgr.Instance.SettingInfo);
-                HideMe();
+                UIMgr.Instance.HidePanel<OptionsPanel>();
 
-                // ? 根据来源返回不同面板
-                if (openedFromGame)
-                {
-                    // 从游戏中打开，恢复时间并返回
-                    Time.timeScale = 1f;
-                }
-                else
-                {
-                    // 从主菜单打开，确保恢复时间（防止意外）并显示主菜单
-                    Time.timeScale = 1f;
+                // 恢复游戏时间流逝，确保玩家回到游戏时不会继续暂停
+                Time.timeScale = 1f;
+
+                //如果是从游戏中打开的设置面板，退出后回到主菜单；如果是从主菜单打开的设置面板，退出后继续留在主菜单
+                if (!openedFromGame)
                     UIMgr.Instance.ShowPanel<MainMenuPanel>();
-                }
                 break;
         }
     }
 
+    /// <summary>
+    /// 根据分辨率下拉框的索引应用分辨率设置，同时考虑全屏模式的状态
+    /// </summary>
+    /// <param name="index"></param>
     private void ApplyResolutionByIndex(int index)
     {
         bool fullscreen = GetControl<Dropdown>("DropDownFullscreen").value == 0;
         SettingsApplier.ApplyResolution(index, fullscreen);
 
+        //在 Unity 中，调用 Screen.SetResolution 有时会重置或影响 VSync 的实际生效
+        //某些平台/驱动下，分辨率切换后，VSync 选项会被系统或引擎重置为默认值，导致之前设置的 VSync 状态失效
+        //先设置分辨率，再设置 VSync，可以确保最终的 VSync 状态是期望的。
+        //如果先设置 VSync，再设置分辨率，分辨率切换可能会覆盖 VSync 设置，导致 VSync 失效或变为默认
         int vSyncDropdownValue = GetControl<Dropdown>("DropDownVsync").value;
         SettingsApplier.ApplyVSync(vSyncDropdownValue == 0);
     }
 
+    /// <summary>
+    /// 设置全屏模式，根据全屏下拉框的值应用分辨率设置
+    /// 同时确保 VSync 设置也被正确应用，避免分辨率切换后 VSync 失效的问题
+    /// </summary>
+    /// <param name="value"></param>
     private void SetFullScreen(int value)
     {
         bool fullscreen = value == 0;
         int currentResIndex = GetControl<Dropdown>("DropDownResolution").value;
         SettingsApplier.ApplyResolution(currentResIndex, fullscreen);
+
+        //在 Unity 中，调用 Screen.SetResolution 有时会重置或影响 VSync 的实际生效
+        //某些平台/驱动下，分辨率切换后，VSync 选项会被系统或引擎重置为默认值，导致之前设置的 VSync 状态失效
+        //先设置分辨率，再设置 VSync，可以确保最终的 VSync 状态是期望的。
+        //如果先设置 VSync，再设置分辨率，分辨率切换可能会覆盖 VSync 设置，导致 VSync 失效或变为默认
+        int vSyncDropdownValue = GetControl<Dropdown>("DropDownVsync").value;
+        SettingsApplier.ApplyVSync(vSyncDropdownValue == 0);
     }
 
     /// <summary>

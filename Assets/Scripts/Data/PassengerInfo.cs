@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,6 +7,7 @@ using UnityEngine;
 /// <summary>
 /// 角色信息类 记录每个乘客的信息
 /// </summary>
+[Obsolete("PassengerInfo 类已过时 请使用PassengerSO")]
 public class PassengerInfo
 {
     /// <summary>

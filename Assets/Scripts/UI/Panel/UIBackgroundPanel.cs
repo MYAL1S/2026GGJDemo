@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// UIBackgroundPanel 类负责管理电梯内背景的显示和动画效果
+/// 配合GamePanel使用
+/// 特别是电梯门的开关动画。它监听电梯门状态变化事件，并根据状态切换门的动画参数，实现门的开合效果。
+/// </summary>
 public class UIBackgroundPanel : BasePanel
 {
-    private Image doorLeft;
-    private Image doorRight;
     /// <summary>
     /// 门的动画组件
     /// </summary>
@@ -16,10 +19,6 @@ public class UIBackgroundPanel : BasePanel
     {
         base.Init();
         
-        // 获取左右门
-        doorLeft = GetControl<Image>("DoorLeft");
-        doorRight = GetControl<Image>("DoorRight");
-
         // 获取门的动画组件
         dooraAnimator = GetComponent<Animator>();
 
@@ -42,13 +41,5 @@ public class UIBackgroundPanel : BasePanel
     {
         // 移除事件监听
         EventCenter.Instance.RemoveEventListener<bool>(E_EventType.E_ElevatorDoorStateChanged, OnDoorStateChanged);
-    }
-
-    /// <summary>
-    /// UIBackgroundPanel 不播放出现音效
-    /// </summary>
-    protected override void PlayShowSound()
-    {
-        // 不播放音效
     }
 }

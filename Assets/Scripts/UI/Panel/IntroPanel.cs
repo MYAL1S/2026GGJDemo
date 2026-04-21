@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 介绍面板类，负责显示游戏的介绍界面包含多张介绍图片
+/// 玩家通过点击屏幕切换介绍图片，最后一张图片后会重置游戏数据并进入游戏场景。
+/// </summary>
 public class IntroPanel : BasePanel
 {
     private Image imgIntro1;
@@ -46,7 +50,6 @@ public class IntroPanel : BasePanel
         // 重置事件管理器
         EventMgr.Instance.ResetState();
         
-        Debug.Log("[IntroPanel] 所有游戏数据已重置");
     }
 
     /// <summary>
@@ -72,7 +75,7 @@ public class IntroPanel : BasePanel
                 // 重置所有游戏数据
                 ResetAllGameData();
 
-                // ⭐ 清理音效列表
+                // 清理音效列表
                 MusicMgr.Instance.ClearSound();
 
                 // 清理所有面板
@@ -96,9 +99,8 @@ public class IntroPanel : BasePanel
     protected override void Update()
     {
         base.Update();
-        if (Input.GetMouseButtonDown(0))
-        {
+        // 玩家点击屏幕或按下空格键切换介绍图片
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
             ChangeState();
-        }
     }
 }

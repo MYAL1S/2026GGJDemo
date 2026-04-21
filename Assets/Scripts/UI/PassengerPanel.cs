@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,6 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 乘客交互面板
 /// </summary>
+[Obsolete("PassengerPanel 已废弃，请使用新的乘客交互系统")]
 public class PassengerPanel : BasePanel
 {
     private Transform expelObj;
@@ -158,7 +160,7 @@ public class PassengerPanel : BasePanel
                 if (selectedPassenger != null)
                 {
                     selectedPassenger.SetHighlight(false);
-                    PassengerMgr.Instance.OnPassengerKicked(selectedPassenger);
+                    //PassengerMgr.Instance.OnPassengerKicked(selectedPassenger);
                     selectedPassenger = null;
                 }
                 UIMgr.Instance.HidePanel<PassengerPanel>(true);

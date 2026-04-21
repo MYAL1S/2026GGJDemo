@@ -4,6 +4,9 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 主菜单面板类，负责显示和管理游戏主菜单界面，允许玩家开始游戏、进入设置、查看制作人员名单或退出游戏
+/// </summary>
 public class MainMenuPanel : BasePanel
 {
     public override void ShowMe()

@@ -261,7 +261,7 @@ public class MusicMgr : BaseSingleton<MusicMgr>
         {
             var item = soundList[i];
             
-            // ⭐ 检查是否已被销毁
+            // 检查是否已被销毁
             if (item == null || item.Equals(null))
             {
                 soundList.RemoveAt(i);

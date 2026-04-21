@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -7,6 +8,7 @@ using UnityEngine;
 /// 玩家对象类
 /// 挂载在玩家预制体上
 /// </summary>
+[Obsolete("已被弃用 不再使用玩家角色控制 而是通过鼠标或者手指触摸屏幕直接与游戏交互")]
 [RequireComponent(typeof(Rigidbody2D))]
 public class Player : MonoBehaviour
 {

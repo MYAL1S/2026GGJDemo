@@ -8,17 +8,40 @@ using UnityEngine.UI;
 /// </summary>
 public class GamePanel : BasePanel
 {
+    /// <summary>
+    /// 楼层信息文本
+    /// </summary>
     private Text txtFloor;
+    /// <summary>
+    /// 时间信息文本
+    /// </summary>
     private Text txtTimeInfo;
+    /// <summary>
+    /// 乘客图标列表 用于显示当前电梯中的乘客数量
+    /// </summary>
     public List<RawImage> humanIconList;
+    /// <summary>
+    /// 灵能图标列表 用于显示当前玩家的灵能值
+    /// </summary>
     public List<RawImage> energyIconList;
+    /// <summary>
+    /// 稳定性图标列表 用于显示当前玩家的稳定性值
+    /// </summary>
     public List<RawImage> stabilityIconList;
+    /// <summary>
+    /// 标识电梯当前方向的箭头图像数组
+    /// </summary>
     public RawImage[] rawImgUpDownArrow;
 
-    // 手机屏幕相关
+    /// <summary>
+    /// 手机屏幕图像组件和Transform 用于物品系统中显示手机屏幕内容
+    /// </summary>
     private Image phoneScreenImage;
     private Transform phoneScreenObj;
 
+    /// <summary>
+    /// 手机物体和铃铛物体 用于物品系统交互
+    /// </summary>
     private PhoneItem phoneItem;
     private BellItem bellItem;
 
@@ -26,14 +49,13 @@ public class GamePanel : BasePanel
     private RectTransform passengerContainer;
 
     // 驱逐UI相关
-    private Transform expelUI;
     private Passenger selectedPassenger;
 
-    // ? 正常和异常状态下的倒计时颜色
+    // 正常和异常状态下的倒计时颜色
     private Color normalTimeColor = Color.white;
     private Color abnormalTimeColor = Color.red;
 
-    // 新增：保存楼层默认颜色和覆盖标志
+    // 保存楼层默认颜色和覆盖标志
     private Color normalFloorColor = Color.white;
     private bool isFloorOverridden = false;
 
@@ -43,7 +65,7 @@ public class GamePanel : BasePanel
         txtFloor = GetControl<Text>("TxtFloor");
         txtTimeInfo = GetControl<Text>("TxtTimeInfo");
         
-        // ? 保存正常颜色
+        // 保存正常颜色
         if (txtTimeInfo != null)
             normalTimeColor = txtTimeInfo.color;
         
@@ -54,8 +76,6 @@ public class GamePanel : BasePanel
         phoneScreenImage = GetControl<Image>("PhoneScreen");
         if (phoneScreenImage != null)
             phoneScreenObj = phoneScreenImage.transform;
-
-        expelUI = transform.Find("ExpelUI");
 
         // 初始化乘客容器
         InitPassengerContainer();
@@ -68,11 +88,9 @@ public class GamePanel : BasePanel
         EventCenter.Instance.AddEventListener<int>(E_EventType.E_PassengerCountChanged, UpdatePassengerUI);
         EventCenter.Instance.AddEventListener<bool>(E_EventType.E_ElevatorDirectionChanged, UpdateDirectionUI);
         EventCenter.Instance.AddEventListener<int>(E_EventType.E_CountdownUpdate, UpdateCountdownUI);
-        EventCenter.Instance.AddEventListener<Passenger>(E_EventType.E_PassengerClicked, OnPassengerClicked);
-        // ? 监听异常状态变化
+        // 监听异常状态变化
         EventCenter.Instance.AddEventListener<bool>(E_EventType.E_AbnormalStateChanged, OnAbnormalStateChanged);
 
-        HideExpelUI();
         InitPlayerData();
         InitUIDisplay();
     }
@@ -82,6 +100,7 @@ public class GamePanel : BasePanel
     /// </summary>
     private void InitPassengerContainer()
     {
+        /// 如果场景中已经存在 PassengerContainer 则直接使用
         Transform existingContainer = transform.Find("PassengerContainer");
         if (existingContainer != null)
         {
@@ -89,6 +108,7 @@ public class GamePanel : BasePanel
             return;
         }
 
+        // 否则创建一个新的 PassengerContainer
         GameObject containerObj = new GameObject("PassengerContainer");
         passengerContainer = containerObj.AddComponent<RectTransform>();
         passengerContainer.SetParent(transform, false);
@@ -107,8 +127,12 @@ public class GamePanel : BasePanel
         return passengerContainer;
     }
 
+    /// <summary>
+    /// 初始化物品系统
+    /// </summary>
     private void InitItemSystem()
     {
+        // 读取物品配置
         ItemConfigSO itemConfig = Resources.Load<ItemConfigSO>("Config/ItemConfig");
 
         var phoneObj = transform.Find("PhoneItem");
@@ -141,6 +165,9 @@ public class GamePanel : BasePanel
         }
     }
 
+    /// <summary>
+    /// 初始化玩家数据
+    /// </summary>
     private void InitPlayerData()
     {
         var playerInfo = GameDataMgr.Instance.PlayerInfo;
@@ -151,6 +178,9 @@ public class GamePanel : BasePanel
             playerInfo.nowPsychicPowerValue = playerInfo.maxPsychicPowerValue;
     }
 
+    /// <summary>
+    /// 初始化UI显示
+    /// </summary>
     private void InitUIDisplay()
     {
         var playerInfo = GameDataMgr.Instance.PlayerInfo;
@@ -162,14 +192,17 @@ public class GamePanel : BasePanel
         int passengerCount = PassengerMgr.Instance.passengerList?.Count ?? 0;
         UpdatePassengerUI(passengerCount);
         
-        // ? 初始化时两个箭头都不亮（停止状态）
+        // 初始化时两个箭头都不亮（停止状态）
         SetArrowsVisible(false, false);
         
         UpdateCountdownUI(0);
     }
 
     #region UI更新方法
-
+    /// <summary>
+    /// 更新灵能值UI
+    /// </summary>
+    /// <param name="currentEnergy"></param>
     public void UpdateEnergyUI(int currentEnergy)
     {
         if (energyIconList == null || energyIconList.Count == 0)
@@ -183,6 +216,10 @@ public class GamePanel : BasePanel
         }
     }
 
+    /// <summary>
+    /// 更新稳定度UI
+    /// </summary>
+    /// <param name="currentStability"></param>
     public void UpdateStabilityUI(int currentStability)
     {
         if (stabilityIconList == null || stabilityIconList.Count == 0)
@@ -196,6 +233,10 @@ public class GamePanel : BasePanel
         }
     }
 
+    /// <summary>
+    /// 更新电梯内乘客数量UI
+    /// </summary>
+    /// <param name="currentPassengerCount"></param>
     public void UpdatePassengerUI(int currentPassengerCount)
     {
         if (humanIconList == null || humanIconList.Count == 0)
@@ -222,18 +263,18 @@ public class GamePanel : BasePanel
         switch (currentState)
         {
             case E_ElevatorState.Stopped:
-                // ⭐ 停靠时两个箭头都不亮
+                // 停靠时两个箭头都不亮
                 SetArrowsVisible(false, false);
                 break;
                 
             case E_ElevatorState.Departing:
-                // ⭐ 离开时两个箭头都亮
+                // 离开时两个箭头都亮
                 SetArrowsVisible(true, true);
                 break;
                 
             case E_ElevatorState.Moving:
             case E_ElevatorState.Arriving:
-                // ⭐ 运行/到达时根据方向显示
+                // 运行/到达时根据方向显示
                 // isGoingUp=true 表示上升，显示上箭头
                 // isGoingUp=false 表示下降，显示下箭头
                 SetArrowsVisible(isGoingUp, !isGoingUp);
@@ -270,11 +311,11 @@ public class GamePanel : BasePanel
         
         if (remainingSeconds <= 0)
         {
-            txtTimeInfo.text = "";
+            txtTimeInfo.text = "00:00";
             return;
         }
         
-        // ? 格式化为 分钟:秒
+        // 格式化为 分钟:秒
         int minutes = remainingSeconds / 60;
         int seconds = remainingSeconds % 60;
         txtTimeInfo.text = $"{minutes:D2}:{seconds:D2}";
@@ -283,50 +324,6 @@ public class GamePanel : BasePanel
     #endregion
 
     #region 乘客交互
-
-    /// <summary>
-    /// 乘客被点击时的回调
-    /// </summary>
-    private void OnPassengerClicked(Passenger passenger)
-    {
-        if (passenger == null) return;
-
-        // 清除之前选中乘客的高亮
-        if (selectedPassenger != null && selectedPassenger != passenger)
-        {
-            selectedPassenger.SetHighlight(false);
-        }
-
-        selectedPassenger = passenger;
-        passenger.SetHighlight(true);
-        ShowExpelUI();
-    }
-
-    /// <summary>
-    /// 显示驱逐UI
-    /// </summary>
-    public void ShowExpelUI()
-    {
-        if (expelUI != null)
-            expelUI.gameObject.SetActive(true);
-    }
-
-    /// <summary>
-    /// 隐藏驱逐UI
-    /// </summary>
-    public void HideExpelUI()
-    {
-        if (expelUI != null)
-            expelUI.gameObject.SetActive(false);
-
-        // 清除选中乘客的高亮
-        if (selectedPassenger != null)
-        {
-            selectedPassenger.SetHighlight(false);
-            selectedPassenger = null;
-        }
-    }
-
     /// <summary>
     /// 异常状态变化回调
     /// - 异常开始时覆盖楼层显示并变红（阻止其他写入）
@@ -334,10 +331,9 @@ public class GamePanel : BasePanel
     /// </summary>
     private void OnAbnormalStateChanged(bool isAbnormal)
     {
+        // 更新时间文本颜色
         if (txtTimeInfo != null)
-        {
             txtTimeInfo.color = isAbnormal ? abnormalTimeColor : normalTimeColor;
-        }
 
         if (txtFloor == null)
             return;
@@ -369,13 +365,9 @@ public class GamePanel : BasePanel
     }
 
     /// <summary>
-    /// 强制设置楼层显示（绕过覆盖保护）
+    /// 设置楼层显示文本 仅供 ElevatorMgr 在非异常状态下调用（不检查覆盖标志）
     /// </summary>
-    public void ForceSetFloor(int level)
-    {
-        SetFloorText(level.ToString());
-    }
-
+    /// <param name="text"></param>
     private void SetFloorText(string text)
     {
         if (txtFloor != null)
@@ -393,7 +385,7 @@ public class GamePanel : BasePanel
                 UIMgr.Instance.ShowPanel<OptionsPanel>(E_UILayer.Top);
                 break;
             case "BtnReturn":
-                // ⭐ 停止游戏相关流程并返回开始场景
+                // 停止游戏相关流程并返回开始场景
                 ReturnToMainMenu();
                 break;
             case "BtnTip":
@@ -407,13 +399,16 @@ public class GamePanel : BasePanel
     /// </summary>
     private void ReturnToMainMenu()
     {
+        // 停止所有游戏相关流程（电梯、乘客、事件等）
         StopGameProcesses();
         
-        // ⭐ 清理音效列表
+        // 清理音效列表
         MusicMgr.Instance.ClearSound();
-        
+
+        // 清理UI面板
         UIMgr.Instance.ClearAllPanels();
-        
+
+        // 加载开始场景并显示主菜单
         SceneMgr.Instance.LoadSceneAsync("BeginScene", () =>
         {
             UIMgr.Instance.ShowPanel<MainMenuPanel>();
@@ -440,8 +435,6 @@ public class GamePanel : BasePanel
         
         // 恢复时间（以防被暂停）
         Time.timeScale = 1f;
-        
-        Debug.Log("[GamePanel] 已停止所有游戏流程");
     }
 
     public override void HideMe()
@@ -451,17 +444,8 @@ public class GamePanel : BasePanel
         EventCenter.Instance.RemoveEventListener<int>(E_EventType.E_PassengerCountChanged, UpdatePassengerUI);
         EventCenter.Instance.RemoveEventListener<bool>(E_EventType.E_ElevatorDirectionChanged, UpdateDirectionUI);
         EventCenter.Instance.RemoveEventListener<int>(E_EventType.E_CountdownUpdate, UpdateCountdownUI);
-        EventCenter.Instance.RemoveEventListener<Passenger>(E_EventType.E_PassengerClicked, OnPassengerClicked);
-        // ? 移除异常状态监听
+        // 移除异常状态监听
         EventCenter.Instance.RemoveEventListener<bool>(E_EventType.E_AbnormalStateChanged, OnAbnormalStateChanged);
         base.HideMe();
-    }
-
-    /// <summary>
-    /// GamePanel 不播放出现音效
-    /// </summary>
-    protected override void PlayShowSound()
-    {
-        // GamePanel 不播放音效
     }
 }

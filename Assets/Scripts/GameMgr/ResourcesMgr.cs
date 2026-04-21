@@ -60,7 +60,6 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     [Tooltip("电梯离开动画时间（秒）")]
     public int elevatorDepartingTime = 5;
 
-    // ⭐ 新增配置
     [Tooltip("第一次到达时间/ArrivingTime(秒)")]
     public int firstArrivingTime = 3; // 单位：秒（举例，实际可在 Inspector 配置）
 
@@ -108,60 +107,25 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
     public int passengerTrustValue;
 
     /// <summary>
-    /// 稳定性值
-    /// </summary>
-    private int _stabilityValue;
-    public int stabilityValue
-    {
-        get => _stabilityValue;
-        set
-        {
-            _stabilityValue = Mathf.Max(0, value);
-            EventCenter.Instance.EventTrigger<int>(E_EventType.E_StabilityChanged, _stabilityValue);
-        }
-    }
-
-    /// <summary>
     /// 游戏是否已结束
     /// </summary>
     public bool isGameOver = false;
 
     /// <summary>
-    /// ⭐【新增】重置资源管理器的运行时数据
+    /// 获取乘客点位数量
+    /// </summary>
+    public int PassengerSlotCount => passengerDockingPositions.Count;
+
+    /// <summary>
+    /// 重置资源管理器的运行时数据
     /// </summary>
     public void ResetRuntimeData()
     {
-        // 1. 复位游戏结束标记（最关键！）
+        // 复位游戏结束标记
         isGameOver = false;
 
-        // 2. 复位信任值/稳定值（根据你的游戏逻辑，恢复满值）
-        // 假设 passengerTrustValue 是通过 GameDataMgr 获取的，或者在这里维护
-        // 如果是在这里维护：
-        passengerTrustValue = 6;
-
-        // 如果有其他计数器，也要在这里清零
-        Debug.Log("[ResourcesMgr] 运行时数据已重置，解除 GameOver 锁定");
-    }
-
-    public void SubPassengerTrustValue(int value)
-    {
-        passengerTrustValue -= value;
-        passengerTrustValue = Mathf.Max(0, passengerTrustValue);
-    }
-
-    public void SubStabilityValue(int value)
-    {
-        stabilityValue -= value;
-    }
-
-    public void AddStabilityValue(int value)
-    {
-        stabilityValue += value;
-    }
-
-    void Start()
-    {
-        _stabilityValue = stabilityValue;
+        // 复位信任值/稳定值
+        passengerTrustValue = GameDataMgr.Instance.MaxTrustValue;
     }
 
     void Update()
@@ -169,42 +133,9 @@ public class ResourcesMgr : BaseSingleMono<ResourcesMgr>
         if (isGameOver)
             return;
 
-        // 如果控制台疯狂刷这一行，且数值是 0，那就是这里的问题
-        if (passengerTrustValue <= 0)
-        {
-            Debug.LogError($"[侦探模式] ResourcesMgr 判定游戏结束！因为 passengerTrustValue 为: {passengerTrustValue}");
-        }
         isGameOver = passengerTrustValue <= 0;
 
         if (isGameOver)
             EventMgr.Instance.FallIntoAbyss();
     }
-
-    /// <summary>
-    /// 验证两组配置数据长度是否一致
-    /// </summary>
-    public bool ValidatePassengerPositionConfigs()
-    {
-        int dockingPosCount = passengerDockingPositions.Count;
-        int dockingScaleCount = passengerDockingScales.Count;
-        int movingPosCount = passengerMovingPositions.Count;
-        int movingScaleCount = passengerMovingScales.Count;
-
-        if (dockingPosCount != dockingScaleCount || 
-            dockingPosCount != movingPosCount ||
-            dockingPosCount != movingScaleCount)
-        {
-            Debug.LogError($"[ResourcesMgr] 乘客位置配置数量不一致! " +
-                $"停靠位置:{dockingPosCount}, 停靠缩放:{dockingScaleCount}, " +
-                $"运行位置:{movingPosCount}, 运行缩放:{movingScaleCount}");
-            return false;
-        }
-        
-        return true;
-    }
-
-    /// <summary>
-    /// 获取乘客点位数量
-    /// </summary>
-    public int PassengerSlotCount => passengerDockingPositions.Count;
 }

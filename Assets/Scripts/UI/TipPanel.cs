@@ -3,27 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 提示面板类
+/// </summary>
 public class TipPanel : BasePanel
 {
-    private float alphaSpeed = 5f;
-    private bool isPanelShowing = false;
-    private CanvasGroup panelCanvasGroup;
-    private bool isFadingOut = false;
-
     /// <summary>
     /// TipPanel 排序层级（必须高于所有游戏UI）
     /// </summary>
     private const int PANEL_SORTING_ORDER = 300;
+    /// <summary>
+    /// 遮罩层排序层级（必须在 TipPanel 之下，覆盖所有游戏UI）
+    /// </summary>
     private const int MASK_SORTING_ORDER = 250;
 
     public override void Init()
     {
         base.Init();
         
-        panelCanvasGroup = GetComponent<CanvasGroup>();
-        if (panelCanvasGroup == null)
-            panelCanvasGroup = gameObject.AddComponent<CanvasGroup>();
-
         SetupCanvasSorting();
         SetupBlockingMask();
     }
@@ -83,21 +80,13 @@ public class TipPanel : BasePanel
         // 半透明黑色遮罩
         Image maskImage = maskObj.AddComponent<Image>();
         maskImage.color = new Color(0, 0, 0, 0.5f);
-        maskImage.raycastTarget = true;  // ? 阻挡底层点击
+        maskImage.raycastTarget = true;  // 阻挡底层点击
     }
 
     public override void ShowMe()
     {
-        isPanelShowing = true;
-        isFadingOut = false;
-        panelCanvasGroup.alpha = 0;
+        base.ShowMe();
         Time.timeScale = 0f;
-    }
-
-    public override void HideMe()
-    {
-        isPanelShowing = false;
-        isFadingOut = true;
     }
 
     protected override void OnButtonClick(string name)
@@ -106,31 +95,11 @@ public class TipPanel : BasePanel
         switch (name)
         {
             case "BtnReturn":
-                HideMe();
-                break;
-        }
-    }
-
-    protected override void Update()
-    {
-        // 淡入
-        if (isPanelShowing && panelCanvasGroup.alpha < 1)
-        {
-            panelCanvasGroup.alpha += alphaSpeed * Time.unscaledDeltaTime;
-            if (panelCanvasGroup.alpha >= 1)
-                panelCanvasGroup.alpha = 1;
-        }
-        // 淡出
-        else if (isFadingOut && panelCanvasGroup.alpha > 0)
-        {
-            panelCanvasGroup.alpha -= alphaSpeed * Time.unscaledDeltaTime;
-            if (panelCanvasGroup.alpha <= 0)
-            {
-                panelCanvasGroup.alpha = 0;
-                isFadingOut = false;
-                Time.timeScale = 1f;
+                //隐藏提示面板
                 UIMgr.Instance.HidePanel<TipPanel>();
-            }
+                //恢复时间流速
+                Time.timeScale = 1f;
+                break;
         }
     }
 

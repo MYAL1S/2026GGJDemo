@@ -52,8 +52,10 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
     /// 物品 UI 排序层级（高于乘客）
     /// </summary>
     protected const int ITEM_SORTING_ORDER = 100;
-    
-    // ⭐ 拖拽偏移量（用于更精确的位置计算）
+
+    /// <summary>
+    /// 拖拽偏移量（用于更精确的位置计算）
+    /// </summary>
     protected Vector2 dragOffset;
 
     protected virtual void Awake()
@@ -95,6 +97,11 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
         }
     }
 
+    /// <summary>
+    /// 实现的IBeginDragHandler接口中的方法 开始拖放时调用
+    /// 计算拖拽偏移量并初始化计时器
+    /// </summary>
+    /// <param name="eventData"></param>
     public virtual void OnBeginDrag(PointerEventData eventData)
     {
         // 非拖拽状态
@@ -108,7 +115,7 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
         dragTimer = 0f;
         isTimerExpired = false;
 
-        // ⭐ 计算初始拖拽偏移量
+        // 计算初始拖拽偏移量
         Vector2 localPoint;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             parentCanvas.transform as RectTransform,
@@ -118,16 +125,19 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
         );
         dragOffset = rectTransform.anchoredPosition - localPoint;
 
-        Debug.Log($"[{GetType().Name}] 开始拖放");
         OnDragStart();
     }
 
+    /// <summary>
+    /// 实现的IDragHandler接口中的方法 拖放过程中调用
+    /// </summary>
+    /// <param name="eventData"></param>
     public virtual void OnDrag(PointerEventData eventData)
     {
         if (isTimerExpired)
             return;
 
-        // ⭐ 使用绝对位置而不是增量，避免快速移动时丢失精度
+        // 使用绝对位置而不是增量，避免快速移动时丢失精度
         Vector2 localPoint;
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
             parentCanvas.transform as RectTransform,
@@ -139,10 +149,13 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
         }
     }
 
+    /// <summary>
+    /// 实现的IEndDragHandler接口中的方法 结束拖放时调用
+    /// </summary>
+    /// <param name="eventData"></param>
     public virtual void OnEndDrag(PointerEventData eventData)
     {
         isDragging = false;
-        Debug.Log($"[{GetType().Name}] 结束拖放");
         OnDragEnd();
         ResetPosition();
     }
@@ -160,7 +173,6 @@ public abstract class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHan
     /// </summary>
     protected virtual void OnTimerExpired()
     {
-        Debug.Log($"[{GetType().Name}] 拖放超时");
         OnDragEnd();
         ResetPosition();
     }

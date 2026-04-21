@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 开发者面板类 显示开发者信息
+/// </summary>
 public class DeveloperPanel : BasePanel
 {
     protected override void OnButtonClick(string name)

@@ -6,12 +6,12 @@ using UnityEngine;
 /// <summary>
 /// 设置数据类
 /// 用于本地数据持久化
-///  1:1920x1080, 2:2560x1440, 3:1600x900, 4:1280x720
 /// </summary>
 public class SettingInfo
 {
     /// <summary>
     /// 分辨率设置
+    ///  1:1920x1080, 2:2560x1440, 3:1600x900, 4:1280x720
     /// </summary>
     public int resolutionType = 1;
     /// <summary>

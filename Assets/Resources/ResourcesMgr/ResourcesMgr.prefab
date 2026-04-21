@@ -54,6 +54,15 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b6b41fa29b322de4a855dcd09127e13a, type: 2}
   - {fileID: 11400000, guid: fa237df04db02364586949374f6fe667, type: 2}
   - {fileID: 11400000, guid: 385cb19566d90bc459bd049d30af1b75, type: 2}
+  - {fileID: 11400000, guid: 812aa137294cb524ba3d3d8db56493d9, type: 2}
+  - {fileID: 11400000, guid: 890ac8b9e52609f43ae7b8cc28a544e2, type: 2}
+  - {fileID: 11400000, guid: be8650076c836b04c9be007e8f41283d, type: 2}
+  - {fileID: 11400000, guid: a23be2bffde0cdd4fb41ebcd80bf7087, type: 2}
+  - {fileID: 11400000, guid: 7f23ac925365b02418a27aa3a8106413, type: 2}
+  - {fileID: 11400000, guid: 6c5a01268cc95984284e04440b55655e, type: 2}
+  - {fileID: 11400000, guid: f301ac8a7ee33d44d8ca4ee3c97cfa2d, type: 2}
+  - {fileID: 11400000, guid: 72d575246411b374b873a09b9ce6cb5f, type: 2}
+  - {fileID: 11400000, guid: 184e5286beb73e444a0ea7e73b64b02a, type: 2}
   passengerPrefab: {fileID: 1040739472650254369, guid: 4baf8ff319593d44e9d7985deb335f40, type: 3}
   passengerSOList:
   - {fileID: 11400000, guid: 6560769b9bb1bb14786412e1f308b5c6, type: 2}

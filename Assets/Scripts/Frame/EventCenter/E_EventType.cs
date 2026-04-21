@@ -20,10 +20,6 @@ public enum E_EventType
     /// </summary>
     E_Input_Vertical,
     /// <summary>
-    /// 乘客点击事件-传入Passenger对象
-    /// </summary>
-    E_PassengerClicked,
-    /// <summary>
     /// 镜子UI更新事件-不传入参数
     /// </summary>
     E_MirrorUIUpdate,

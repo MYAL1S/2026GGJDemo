@@ -1,7 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 登陆面板(已废弃)
+/// </summary>
+[Obsolete("LoginPanel is deprecated and will be removed in future versions.")]
 public class LoginPanel : BasePanel
 {
     public override void Init()

@@ -1,8 +1,10 @@
+using System;
 using UnityEngine;
 
 /// <summary>
 /// 游戏管理器 - 负责初始化游戏系统
 /// </summary>
+[Obsolete("GameManager 已经弃用")]
 public class GameManager : MonoBehaviour
 {
     private void Awake()

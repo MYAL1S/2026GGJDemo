@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 遮罩面板类，用于实现迷雾效果，遮挡乘客
+/// </summary>
 public class FogPanel : BasePanel
 {
     /// <summary>
@@ -31,15 +34,5 @@ public class FogPanel : BasePanel
         // 确保有 GraphicRaycaster（如果需要交互）
         if (GetComponent<GraphicRaycaster>() == null)
             gameObject.AddComponent<GraphicRaycaster>();
-    }
-
-    public override void ShowMe()
-    {
-        base.ShowMe();
-    }
-
-    public override void HideMe()
-    {
-        base.HideMe();
     }
 }

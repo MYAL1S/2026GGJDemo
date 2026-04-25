@@ -290,7 +290,7 @@ public class UIMgr : BaseSingleton<UIMgr>
     {
         string panelName = typeof(T).Name;
 
-        // ⭐ 先检查是否存在，再访问
+        // 先检查是否存在，再访问
         if (!panelDic.ContainsKey(panelName))
         {
             // 面板从未被显示过，直接返回

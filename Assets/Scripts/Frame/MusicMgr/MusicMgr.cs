@@ -92,7 +92,7 @@ public class MusicMgr : BaseSingleton<MusicMgr>
     /// <param name="forceRestart">是否强制重新播放（默认 false，相同音乐不重新播放）</param>
     public void PlayBKMuic(string path, bool forceRestart = false)
     {
-        // ? 如果正在播放同一首音乐且不强制重播，则跳过
+        // 如果正在播放同一首音乐且不强制重播，则跳过
         if (!forceRestart && currentBKMusicPath == path && bkMusic != null && bkMusic.isPlaying)
         {
             Debug.Log($"[MusicMgr] 背景音乐已在播放: {path}");
@@ -125,7 +125,7 @@ public class MusicMgr : BaseSingleton<MusicMgr>
         if (bkMusic != null)
         {
             bkMusic.Stop();
-            currentBKMusicPath = null;  // ? 清除当前播放路径
+            currentBKMusicPath = null;  // 清除当前播放路径
         }
     }
 
@@ -197,7 +197,7 @@ public class MusicMgr : BaseSingleton<MusicMgr>
     {
         soundValue = value;
         
-        // ⭐ 遍历时检查空引用并清理
+        // 遍历时检查空引用并清理
         for (int i = soundList.Count - 1; i >= 0; i--)
         {
             var item = soundList[i];
@@ -222,7 +222,7 @@ public class MusicMgr : BaseSingleton<MusicMgr>
         if (isPlay)
         {
             isPlaying = true;
-            // ⭐ 遍历时检查空引用
+            // 遍历时检查空引用
             for (int i = soundList.Count - 1; i >= 0; i--)
             {
                 var item = soundList[i];

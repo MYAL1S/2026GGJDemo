@@ -153,7 +153,7 @@ public abstract class BasePanel : MonoBehaviour
         canvasGroup.alpha = 0;
         SetDefaultSelection();
         
-        // ? 播放面板出现音效（默认不播放，子类可重写）
+        // 播放面板出现音效（默认不播放，子类可重写）
         PlayShowSound();
     }
 

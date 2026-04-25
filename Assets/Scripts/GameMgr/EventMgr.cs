@@ -177,10 +177,7 @@ public class EventMgr : BaseSingleton<EventMgr>
 
         // 兜底：配置异常（<=0）时使用默认 30 秒，防止触发即失败。
         if (timeout <= 0)
-        {
-            Debug.LogWarning("[EventMgr] 警告：异常超时时间配置为 0！已自动修正为 30秒");
             timeout = 30000;
-        }
 
         // 广播异常开始，供 UI/系统进入异常态表现。
         EventCenter.Instance.EventTrigger(E_EventType.E_UnnormalEventStart);
@@ -194,20 +191,9 @@ public class EventMgr : BaseSingleton<EventMgr>
             abnormalTimerId = 0;
             if (isUnnormalState)
             {
-                Debug.LogError("[EventMgr] 异常事件超时！触发坠崖！(这是导致电梯卡死的直接原因)");
                 FallIntoAbyss();
             }
         });
-
-        Debug.Log($"[EventMgr] 异常事件开始，限时: {timeout / 1000}秒");
-    }
-
-    /// <summary>
-    /// 通过“镇压面具”解决异常事件。
-    /// </summary>
-    public void ResolveUnnormalBySubdueMask()
-    {
-        ResolveUnnormal();
     }
 
     /// <summary>
@@ -262,8 +248,6 @@ public class EventMgr : BaseSingleton<EventMgr>
             abnormalTimerId = 0;
         }
 
-        Debug.Log("[EventMgr] 坠入深渊，游戏失败");
-
         ElevatorMgr.Instance.StopElevator();
 
         UIMgr.Instance.ShowPanel<GameOverPanel>(E_UILayer.Top, (panel) =>
@@ -304,8 +288,6 @@ public class EventMgr : BaseSingleton<EventMgr>
 
         // 释放状态引用。
         fogPanel = null;
-
-        Debug.Log("[EventMgr] 状态已重置");
     }
 
     private EventMgr() { }
